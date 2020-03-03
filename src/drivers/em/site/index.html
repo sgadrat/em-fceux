@@ -22,25 +22,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-
-<meta property="og:title" content="em-fceux" />
-<meta property="og:site_name" content="em-fceux" />
-<meta property="og:description" content="em-fceux is a web version of the FCEUX 8-bit Nintendo Entertainment System (NES) emulator. To play a game, simply drag and drop a ROM file on the em-fceux window! Enjoy!" />
-<!-- NOTE: Following URLs must be absolute -->
-<meta property="og:url" content="https://tsone.kapsi.fi/em-fceux/" />
-<meta property="og:image" content="https://tsone.kapsi.fi/em-fceux/{{img/preview.png}}" />
-
-<title>em-fceux</title>
-
-<meta name="author" content="Valtteri Heikkilä" />
-<meta name="keywords" content="8-bit,emscripten,emu,emulator,famicom,fc,fceu,fceux,nes,nintendo" />
-
+<title>Super Tilt Bro. HTML5</title>
+<meta name="author" content="Valtteri Heikkilä, then adapted to specific needs by Sylvain Gadrat" />
 <link rel="license" href="gpl-2.0.txt" />
-
-<link rel="icon" type="image/png" href="{{img/favicon-48.png}}" />
-<link rel="apple-touch-icon" href="{{img/favicon-60.png}}">
-<link rel="apple-touch-icon" sizes="120x120" href="{{img/favicon-120.png}}" />
-
 <link href="{{style.css}}" rel="stylesheet" />
 </head>
 <body>
@@ -58,11 +42,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 <div id="loader">
   <noscript id="noscript">
-     PLEASE ENABLE JAVASCRIPT em-fceux requires JavaScript
+     Please enable javascript
   </noscript>
   <script>
-    if (typeof WebAssembly !== "object")
-      window.location += "../em-fceux-asmjs/";
+    if (typeof WebAssembly !== "object") {
+      console.error("You need a browser supporting WebAssembly to run this game. If it is impossible, please download the ROM and play it in an emulator.");
+	}
   </script>
   <div id="progressDiv"><div id="progress"></div></div>
   <script>
@@ -74,44 +59,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <div id="controllersTab">
   <div id="controllersContainer">
     <table id="controllers">
-
-      <tr><td colspan="2"><h4>PICTURE CONTROLS</h4>
-      <tr><td>Brightness<td><input id="brightness" type="range" min="-1" max="1" step="0.2" oninput="FCEM.setLocalController(BRIGHTNESS, this.value)" onchange="FCEM.setLocalController(BRIGHTNESS, this.value)"/>
-      <tr><td>Contrast<td><input id="contrast" type="range" min="-1" max="1" step="0.2" oninput="FCEM.setLocalController(CONTRAST, this.value)" onchange="FCEM.setLocalController(CONTRAST, this.value)"/>
-      <tr><td>Color<td><input id="color" type="range" min="-1" max="1" step="0.2" oninput="FCEM.setLocalController(COLOR, this.value)" onchange="FCEM.setLocalController(COLOR, this.value)"/>
-      <tr><td>Gamma<td><input id="gamma" type="range" min="-1" max="1" step="0.2" oninput="FCEM.setLocalController(GAMMA, this.value)" onchange="FCEM.setLocalController(GAMMA, this.value)"/>
-
-      <tr><td colspan="2"><h4>NTSC EMULATION</h4>
-      <tr><td>NTSC Emulation*<td><input id="ntsc_emu" type="checkbox" checked oninput="FCEM.setLocalController(NTSC_EMU, this.checked)" onchange="FCEM.setLocalController(NTSC_EMU, this.checked)"/><label for="ntsc_emu"></label>
-      <tr><td>Sharpness<td><input id="sharpness" type="range" min="-0.5" max="0.5" step="0.1" oninput="FCEM.setLocalController(SHARPNESS, this.value)" onchange="FCEM.setLocalController(SHARPNESS, this.value)"/>
-      <tr><td>Signal Noise<td><input id="noise" type="range" min="0" max="1" step="0.1" oninput="FCEM.setLocalController(NOISE, this.value)" onchange="FCEM.setLocalController(NOISE, this.value)"/><br/>
-
-      <tr><td colspan="2"><h4>TV EMULATION</h4>
+      <tr><td colspan="2"><h4>OPTIONS</h4>
       <tr><td>TV Emulation<td><input id="crt_enabled" type="checkbox" checked oninput="FCEM.setLocalController(CRT_ENABLED, this.checked)" onchange="FCEM.setLocalController(CRT_ENABLED, this.checked)"/><label for="crt_enabled"></label><br/>
-      <tr><td>Scanlines<td><input id="scanlines" type="range" min="0" max="1" step="0.1" oninput="FCEM.setLocalController(SCANLINES, this.value)" onchange="FCEM.setLocalController(SCANLINES, this.value)"/><br/>
-      <tr><td>Glow<td><input id="glow" type="range" min="0" max="1" step="0.1" oninput="FCEM.setLocalController(GLOW, this.value)" onchange="FCEM.setLocalController(GLOW, this.value)"/><br/>
-      <tr><td>Convergence<td><input id="convergence" type="range" min="0" max="1" step="0.1" oninput="FCEM.setLocalController(CONVERGENCE, this.value)" onchange="FCEM.setLocalController(CONVERGENCE, this.value)"/><br/>
-
-      <tr><td colspan="2"><h4>SYSTEM SETTINGS</h4>
-      <tr><td>Controller Port 1<td><select disabled><option>Gamepad</option></select>
-      <tr><td>Controller Port 2<td><select id="port2" onchange="FCEM.setLocalController(PORT2, this.value)"><option value="0">Gamepad</option><option value="1">Zapper</option></select>
-      <tr><td>Video System<td><select id="video_system" onchange="FCEM.setLocalController(VIDEO_SYSTEM, this.value)"><option value="-1">(Auto)</option><option value="0">NTSC</option><option value="1">PAL</option></select>
       <tr><td>Use WebGL<td><input id="webgl_enabled" type="checkbox" oninput="FCEM.setLocalController(WEBGL_ENABLED, this.checked)" onchange="FCEM.setLocalController(WEBGL_ENABLED, this.checked)"/><label for="webgl_enabled"></label>
     </table>
-    <p><input type="button" value="Reset to Defaults" onclick="FCEM.initControllers(true)" />
-    <p><i><small>* NTSC composite signal path emulation.</small></i>
-    <!-- <input type="button" value="dump FS" onclick="var f = findFiles('/'); f.forEach(function(x) { console.log('!!!! dump: ' + x); })" /> -->
   </div>
   <label id="controllersToggleLabel" for="controllersToggle"></label>
-</div>
-
-<div hidden>
-  <div class="cartRow" id="cartProto" data-idx=""><div class="cart" onclick="return askSelectGame(event, this.parentNode);"><div class="labelContainer"><div class="label"></div></div><div class="cartDelete" onclick="return askDeleteGame(event, this.parentNode.parentNode);"></div></div></div>
-</div>
-<input id="stackToggle" type="checkbox" hidden />
-<div id="stackTab">
-  <label id="stackToggleLabel" for="stackToggle"></label>
-  <div id="stackContainer"><div id="stack"><div></div></div></div>
 </div>
 
 <input id="helpToggle" type="checkbox" hidden />
