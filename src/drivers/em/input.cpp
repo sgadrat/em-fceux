@@ -334,6 +334,7 @@ static void UpdateGamepad(void)
 	int opposite_dirs = 0;
 
 	// Four possibly connected joysticks/gamepads are read here.
+	emscripten_sample_gamepad_data();
 	EmscriptenGamepadEvent gamepads[4];
 	for (i = 4 - 1; i >= 0; --i) {
 		gamepads[i].connected = (EMSCRIPTEN_RESULT_SUCCESS
