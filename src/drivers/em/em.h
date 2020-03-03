@@ -85,12 +85,15 @@ enum FCEM_Input {\
 	FCEM_NULL = 0x0000,
 #define INPUT(i_,dk_,dg_,e_,t_) \
 	FCEM_ ## e_ = i_,
+#define INPUT_HIDDEN(i_,dk_,dg_,e_,t_) \
+	FCEM_ ## e_ = i_,
 #define INPUT_POST \
 	FCEM_INPUT_COUNT\
 };
 #include "input.inc.hpp"
 #undef INPUT_PRE
 #undef INPUT
+#undef INPUT_HIDDEN
 #undef INPUT_POST
 #define FCEM_GAMEPAD FCEM_GAMEPAD0_A
 #define FCEM_GAMEPAD_SIZE (FCEM_GAMEPAD1_A - FCEM_GAMEPAD0_A)
