@@ -64,18 +64,23 @@ toggleSound : (function() {
   onDOMLoaded : function() {
     FCEM.showControls(false);
   },
-  startGame : function(path) {
-    //TODO move audio context creation where it works
-    // NOTE: tsone: AudioContext must be created from user input
-    //if (typeof FCEM.audioContext === 'undefined') {
-    //  if (typeof AudioContext !== 'undefined') {
-    //    FCEM.audioContext = new AudioContext();
-    //  } else if (typeof webkitAudioContext !== 'undefined') {
-    //    FCEM.audioContext = new webkitAudioContext();
-    //  }
-    //  FCEM.audioContext.resume();
-    //}
+  createAudioContext : function() {
+    if (typeof FCEM.audioContext === 'undefined') {
+      if (typeof AudioContext !== 'undefined') {
+        FCEM.audioContext = new AudioContext();
+      } else if (typeof webkitAudioContext !== 'undefined') {
+        FCEM.audioContext = new webkitAudioContext();
+      }
+      FCEM.audioContext.resume();
+    }
 
+    // Avoid keeping a stuck audio context as it freezes FCEUX
+    if (FCEM.audioContext.state !== 'running') {
+        delete FCEM.audioContext;
+    }
+  },
+  startGame : function(path) {
+    FCEM.createAudioContext();
     Module.romName = path;
     Module.romReload = 1;
   },
@@ -443,6 +448,7 @@ req.addEventListener('load', function(event) {
 	}
 	s.src = url;
 	document.documentElement.appendChild(s);
+
 	FCEM.startGame('/data/games/Super Tilt Bro(E).nes');
 }, false);
 req.open("GET", "{{fceux.js}}", true);
@@ -493,6 +499,15 @@ function findFiles(startPath) {
       return [];
   }
 }
+
+function startAudioFromPhysical() {
+  /* Function to be called on the first physical event to enable audio if it was not already done on load */
+  FCEM.createAudioContext();
+  document.removeEventListener("keydown", startAudioFromPhysical);
+  document.removeEventListener("click", startAudioFromPhysical);
+}
+document.addEventListener("keydown", startAudioFromPhysical);
+document.addEventListener("click", startAudioFromPhysical);
 
 document.addEventListener("keydown", function(e) {
   if (!FCEV.catchEnabled) {
