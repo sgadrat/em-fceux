@@ -1,5 +1,6 @@
 .DS_Store
 *.o
+*.pyc
 *.blend?
 /.sconf_temp/
 /.sconsign.dblite
