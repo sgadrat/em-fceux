@@ -477,7 +477,7 @@ static BMAPPINGLocal bmap[] = {
 	{"CC-21 MI HUN CHE",	 27, UNLCC21_Init},		// Former dupe for VRC2/VRC4 mapper, redefined with crc to mihunche boards
 	{"",					 28, Mapper28_Init},
 //	{"",					 29, Mapper29_Init},
-//	{"",					 30, Mapper30_Init},
+	{"UNROM 512",			 30, UNROM512_Init},
 //	{"",					 31, Mapper31_Init},
 	{"IREM G-101",			 32, Mapper32_Init},
 	{"TC0190FMC/TC0350FMR",	 33, Mapper33_Init},
