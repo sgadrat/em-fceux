@@ -21,6 +21,7 @@
 #include "em.h"
 #include "../../fceu.h"
 #include "../../utils/memory.h"
+#include "../../state.h"
 #include <emscripten/html5.h>
 
 
@@ -494,6 +495,12 @@ void FCEM_BindGamepad(int id, int binding)
 	if (id >= FCEM_NULL && id < FCEM_INPUT_COUNT && binding >= 0 && binding < 256) {
 		s_gamepad_bindings[id] = binding;
 	}
+}
+
+int FCEM_GetGamepadState(int id)
+{
+	extern SFORMAT FCEUCTRL_STATEINFO[];
+	return ((uint8 *) FCEUCTRL_STATEINFO[1].v)[id];
 }
 
 } //<< Emscripten externals

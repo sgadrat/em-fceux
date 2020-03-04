@@ -26,8 +26,29 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 <meta name="author" content="Valtteri Heikkilä, then adapted to specific needs by Sylvain Gadrat" />
 <link rel="license" href="gpl-2.0.txt" />
 <link href="{{style.css}}" rel="stylesheet" />
+
+<script>
+function refresh_gamepad_state() {
+  window.requestAnimationFrame(refresh_gamepad_state);
+  if (typeof FCEM.getGamepadState == 'undefined') {
+    return;
+  }
+
+  var btns = ['a', 'b', 'select', 'start', 'up', 'down', 'left', 'right'];
+  for (var gamepad = 0; gamepad < 2; ++gamepad) {
+    var gamepadState = FCEM.getGamepadState(gamepad);
+    for (var btnId = 0; btnId < 8; ++btnId) {
+      var btnName = btns[btnId];
+      var btnMask = (1 << btnId);
+      var btnImage = document.getElementById('gamepad'+ (gamepad+1) +'_btn_'+ btnName);
+      btnImage.style.visibility = (gamepadState & btnMask ? 'visible' : 'hidden');
+    }
+  }
+}
+</script>
+
 </head>
-<body>
+<body onload="refresh_gamepad_state();">
 
 <div id="preload">
   <img class="preload" alt="" src="{{img/cart.gif}}" />
@@ -53,6 +74,45 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
   <script>
     document.getElementById('progressDiv').style.display = 'block';
   </script>
+</div>
+
+<div id="gamepads">
+  <div id="gamepad1" class="gamepadState">
+    <div class="cmdDoc">
+      <pre>  R
+D + G
+  F   (Q) (Space)  A S</pre>
+    </div>
+    <div class="visual" onclick="FCEV.keyBindToggle()">
+      <img src="{{img/nes_gamepad.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_up" src="{{img/nes_gamepad_up.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_left" src="{{img/nes_gamepad_left.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_right" src="{{img/nes_gamepad_right.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_down" src="{{img/nes_gamepad_down.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_select" src="{{img/nes_gamepad_select.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_start" src="{{img/nes_gamepad_start.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_a" src="{{img/nes_gamepad_a.png}}" />
+      <img class="gamepadBtn" id="gamepad1_btn_b" src="{{img/nes_gamepad_b.png}}" />
+    </div>
+  </div>
+  <div id="gamepad2" class="gamepadState">
+    <div class="cmdDoc">
+      <pre>     Up
+Left + Right
+    Down   (L) (Enter)  O P</pre>
+    </div>
+    <div class="visual" onclick="FCEV.keyBindToggle()">
+      <img src="{{img/nes_gamepad.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_up" src="{{img/nes_gamepad_up.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_left" src="{{img/nes_gamepad_left.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_right" src="{{img/nes_gamepad_right.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_down" src="{{img/nes_gamepad_down.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_select" src="{{img/nes_gamepad_select.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_start" src="{{img/nes_gamepad_start.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_a" src="{{img/nes_gamepad_a.png}}" />
+      <img class="gamepadBtn" id="gamepad2_btn_b" src="{{img/nes_gamepad_b.png}}" />
+    </div>
+  </div>
 </div>
 
 <input id="controllersToggle" type="checkbox" hidden />

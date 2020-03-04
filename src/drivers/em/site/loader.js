@@ -356,6 +356,7 @@ var Module = {
     FCEM.bindKey = Module.cwrap('FCEM_BindKey', null, ['number', 'number']);
     FCEM.bindGamepad = Module.cwrap('FCEM_BindGamepad', null, ['number', 'number']);
     FCEM.silenceSound = Module.cwrap('FCEM_SilenceSound', null, ['number']);
+	FCEM.getGamepadState = Module.cwrap('FCEM_GetGamepadState', 'number', ['number']);
     // HACK: Disable default fullscreen handlers. See Emscripten's library_browser.js
     // The handlers forces the canvas size by setting css style width and height with
     // "!important" flag. Workaround is to disable the default fullscreen handlers.
