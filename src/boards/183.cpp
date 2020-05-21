@@ -75,7 +75,8 @@ static DECLFW(M183Write) {
 		int index = (((A >> 11) - 6) | (A >> 3)) & 7;
 		chr[index] = (chr[index] & (0xF0 >> (A & 4))) | ((V & 0x0F) << (A & 4));
 		SyncChr();
-	} else switch (A & 0xF80C) {
+	} else {
+		switch (A & 0xF80C) {
 		case 0x8800: prg[0] = V; SyncPrg(); break;
 		case 0xA800: prg[1] = V; SyncPrg(); break;
 		case 0xA000: prg[2] = V; SyncPrg(); break;
@@ -85,6 +86,7 @@ static DECLFW(M183Write) {
 		case 0xF008: IRQa = V; if (!V) IRQPre = 0; X6502_IRQEnd(FCEU_IQEXT); break;
 		case 0xF00C: IRQPre = 16; break;
 		}
+	}
 }
 
 static void M183IRQCounter(void) {

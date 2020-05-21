@@ -234,7 +234,7 @@ static void CalculatePalette(void)
 			paletten[(x<<4)+z].g=g;
 			paletten[(x<<4)+z].b=b;
 		}
-		WritePalette();
+	WritePalette();
 }
 
 static int ipalette=0;

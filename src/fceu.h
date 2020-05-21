@@ -85,7 +85,7 @@ extern uint8 PAL;
 
 //#include "driver.h"
 
-typedef struct {
+struct FCEUS {
 	int PAL;
 	int NetworkPlay;
 	int SoundVolume;		//Master volume
@@ -113,7 +113,7 @@ typedef struct {
 	uint32 SndRate;
 	int soundq;
 	int lowpass;
-} FCEUS;
+};
 
 int FCEU_TextScanlineOffset(int y);
 int FCEU_TextScanlineOffsetFromBottom(int y);

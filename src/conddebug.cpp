@@ -352,9 +352,9 @@ Condition* Term(const char** str)
 	Condition* t1;
 	Condition* mid;
 
-    t = (Condition*)FCEU_dmalloc(sizeof(Condition));
-    if (!t)
-        return NULL;
+	t = (Condition*)FCEU_dmalloc(sizeof(Condition));
+	if (!t)
+		return NULL;
 
 	memset(t, 0, sizeof(Condition));
 
@@ -371,7 +371,7 @@ Condition* Term(const char** str)
 		scan(str);
 
 		if (!(t1 = (Condition*)FCEU_dmalloc(sizeof(Condition))))
-            return NULL;
+			return NULL;
 
 		memset(t1, 0, sizeof(Condition));
 
@@ -383,7 +383,7 @@ Condition* Term(const char** str)
 		}
 
 		if (!(mid = (Condition*)FCEU_dmalloc(sizeof(Condition))))
-            return NULL;
+			return NULL;
 
 		memset(mid, 0, sizeof(Condition));
 

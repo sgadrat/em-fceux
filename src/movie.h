@@ -32,7 +32,7 @@ enum EMOVIE_FLAG
 	MOVIE_FLAG_NOSYNCHACK = (1<<4)
 };
 
-typedef struct
+struct MOVIE_INFO
 {
 	int movie_version;					// version of the movie format in the file
 	uint32 num_frames;
@@ -45,7 +45,7 @@ typedef struct
 
 	std::vector<std::wstring> comments;
 	std::vector<std::string> subtitles;
-} MOVIE_INFO;
+};
 
 
 #ifndef __EMSCRIPTEN__

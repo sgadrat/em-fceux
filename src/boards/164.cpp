@@ -136,15 +136,16 @@ static DECLFW(Write2) {
 			trigger ^= 1;
 		}
 		laststrobe = V;
-	} else if (A == 0x5100 && V == 6) //damn thoose protected games
+	} else if (A == 0x5100 && V == 6) { //damn thoose protected games
 		setprg32(0x8000, 3);
-	else
+	} else {
 		switch (A & 0x7300) {
 		case 0x5200: reg[0] = V; WSync(); break;
 		case 0x5000: reg[1] = V; WSync(); if (!(reg[1] & 0x80) && (scanline < 128)) setchr8(0); /* setchr8(0); */ break;
 		case 0x5300: reg[2] = V; break;
 		case 0x5100: reg[3] = V; WSync(); break;
 		}
+	}
 }
 
 static void Power2(void) {

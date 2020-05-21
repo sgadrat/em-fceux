@@ -124,7 +124,7 @@ static void updateSharpenKernel()
 {
 	glUseProgram(s_p.sharpen_prog);
 	// TODO: pull out, calculated in multiple places
-	double v = Config_GetValue(FCEM_NTSC_EMU) * 0.4 * (Config_GetValue(FCEM_SHARPNESS)+0.5);
+	GLfloat v = Config_GetValue(FCEM_NTSC_EMU) * 0.4 * (Config_GetValue(FCEM_SHARPNESS)+0.5);
 	GLfloat sharpen_kernel[] = {
 		-v, -v, -v,
 		1, 0, 0,
@@ -609,7 +609,8 @@ static int ES2_CreateWebGLContext()
 	EmscriptenWebGLContextAttributes attr;
 	emscripten_webgl_init_context_attributes(&attr);
 	attr.alpha = attr.antialias = attr.premultipliedAlpha = 0;
-	attr.depth = attr.stencil = attr.preserveDrawingBuffer = attr.preferLowPowerToHighPerformance = attr.failIfMajorPerformanceCaveat = 0;
+	attr.depth = attr.stencil = attr.preserveDrawingBuffer = /*attr.preferLowPowerToHighPerformance =*/ attr.failIfMajorPerformanceCaveat = 0;
+	attr.powerPreference = EM_WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
 	attr.enableExtensionsByDefault = 0;
 	attr.majorVersion = 1;
 	attr.minorVersion = 0;
