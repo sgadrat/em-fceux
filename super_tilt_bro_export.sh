@@ -21,6 +21,20 @@
 #    in /usr/bin/wasm-* by archlinux package emscripten. This patch tells emscripten where to find
 #    it by default. (Note: I failed to set it with the environment variable, so hack the config)
 #
+# llvm not installed:
+#
+#  Symptom:
+#    Fails with a log like that:
+#      shared:ERROR: llc executable not found at `/usr/lib/emscripten-fastcomp/llc`
+#
+#  Solution:
+#    rm ~/.emscripten
+#    pacman -S extra/llvm
+#
+#  Details:
+#    It seems that we can install emscripten without installing llvm. It is still
+#    needed to compile this project.
+#
 # bad version of llvm:
 #
 #  Symptom:
