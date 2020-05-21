@@ -15,5 +15,5 @@ if __name__ == '__main__':
 	keep_names = ['index.html', 'gpl-2.0.txt']
 	p = Publisher(sys.argv[1], sys.argv[2], templates, replaces, keep_names)
 	#p.dry = True
-	p.gzip = ['fceux.js', 'fceux.js.mem', 'fceux.data', 'style.css', 'loader.js', 'fceux.wasm']
+	p.gzip = ['fceux.js', 'fceux.js.mem', 'fceux.data', 'style.css', 'loader.js', 'fceux.wasm', 'webrtc-to-udp.js']
 	p.publish()

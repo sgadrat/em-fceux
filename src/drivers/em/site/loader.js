@@ -200,6 +200,144 @@ toggleSound : (function() {
       FCEV.setControllerEl(id, val);
     }
   },
+
+	// Udp socket API for C++ rainbow mapper
+	udpChannel : null,
+	udpInputBuffer : [],
+
+	createUdpSocket : function(address, port) {
+		wtu.get_channel(
+			{'address': address, 'port': 3003},    // Relay server, port is hardcoded
+			{'address': '127.0.0.1', 'port': port} // Game server, expect it to be cohosted with the relay
+		)
+		.then(function(chan) {
+			chan.binaryType = 'arraybuffer'; // Firefox implements the spec which says "blob" by default. Others are rebels. Let's get the same behaviour everywhere.
+			FCEM.udpChannel = chan;
+
+			chan.onmessage = function(e) {
+				FCEM.udpInputBuffer.push(e.data);
+			};
+			chan.onclose = function() {
+				FCEM.udpChannel = null;
+				udpInputBuffer = [];
+			};
+		});
+		return 1;
+	},
+
+	closeUdpSocket : function(socket) {
+		if (socket === 1 && FCEM.udpChannel !== null) {
+			FCEM.udpChannel.close();
+		}
+	},
+
+	udpSend : function(socket, payload) {
+		if (socket === 1 && FCEM.udpChannel !== null) {
+			FCEM.udpChannel.send(payload);
+		}
+	},
+
+	udpReceive : function(socket) {
+		if (socket !== 1 || FCEM.udpInputBuffer.length === 0) {
+			return null;
+		}
+		return FCEM.udpInputBuffer.splice(0, 1)[0];
+	},
+
+	// Ping API for C++ rainbow mapper
+	pingResult : null,
+	pingSeries : 0,
+	pingRunning : false,
+
+	pingServer : function(address, port, number_of_pings) {
+		if (FCEM.pingRunning) {
+			return;
+		}
+
+		FCEM.pingRunning = true;
+		FCEM.pingSeries = (FCEM.pingSeries + 1) % 0x100;
+		FCEM.pingResult = [];
+		for (let i = 0; i < number_of_pings; ++i) {
+			FCEM.pingResult.push(null);
+		}
+
+		wtu.get_channel(
+			{'address': address, 'port': 3003},    // Relay server, port is hardcoded
+			{'address': '127.0.0.1', 'port': port} // Game server, expect it to be cohosted with the relay
+		)
+		.then(function(chan) {
+			chan.binaryType = 'arraybuffer'; // Firefox implements the spec which says "blob" by default. Others are rebels. Let's get the same behaviour everywhere.
+
+			// Register pong reception routine
+			chan.onmessage = function(e) {
+				const message_type_pong = 5;
+				let v = new DataView(e.data);
+				if (v.getUint8(0) == message_type_pong) {
+					let receive_time = Date.now() % 0x100000000;
+					let series = v.getUint8(1);
+					let number = v.getUint8(2);
+					let send_time = v.getUint32(3, true);
+					if (series === FCEM.pingSeries && number < FCEM.pingResult.length) {
+						FCEM.pingResult[number] = receive_time - send_time;
+					}else console.error('ignored pong: bad data');
+				}else console.error('ignored pong: bad type #'+ v.getUint8(0));
+			};
+
+			// Send a ping per second
+			let send_clock = 0;
+			let current_number = 0;
+			for (let i = 0; i < number_of_pings; ++i) {
+				setTimeout(function() {
+					let payload = new ArrayBuffer(10);
+					let v = new DataView(payload);
+					v.setUint8(0, 2); // message_type
+					v.setUint8(1, FCEM.pingSeries);
+					v.setUint8(2, current_number);
+					v.setUint32(3, Date.now() % 0x100000000, true);
+					v.setUint8(7, 0); //
+					v.setUint8(8, 1); // Filler
+					v.setUint8(9, 2); //
+
+					chan.send(payload);
+					++current_number;
+				}, send_clock);
+				send_clock += 1000;
+			}
+
+			// One second after the last ping, finalize the operation
+			setTimeout(function() {
+				chan.close();
+				FCEM.pingRunning = false;
+			}, send_clock);
+		});
+	},
+
+	popPingResult : function() {
+		if (FCEM.pingRunning || FCEM.pingResult === null) {
+			return null;
+		}
+
+		let result = {
+			min: 999999,
+			max: 0,
+			total: 0,
+			lost: 0,
+			number: FCEM.pingResult.length,
+		};
+		for (let i = 0; i < FCEM.pingResult.length; ++i) {
+			let val = FCEM.pingResult[i];
+			if (val === null) {
+				++result.lost;
+			}else {
+				if (val < result.min) result.min = val;
+				if (val > result.max) result.max = val;
+				result.total += val;
+			}
+		}
+
+		FCEM.pingResult = null;
+		return result;
+	},
 };
 
 var FCEV = {
