@@ -769,6 +769,9 @@ int iNESLoad(const char *name, FCEUFILE *fp, int OverwriteVidMode) {
 
 	MapperNo = (head.ROM_type >> 4);
 	MapperNo |= (head.ROM_type2 & 0xF0);
+	if ((head.ROM_type2 & 0b00001100) == 0b00001000) { // NES 2.0 identifier
+		MapperNo |= ((head.flags8 & 0x0F) << 8); 
+	}
 	if (head.ROM_type & 8) {
 		Mirroring = 2;
 	} else

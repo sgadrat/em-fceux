@@ -58,7 +58,8 @@ struct iNES_HEADER {
 	uint8 VROM_size;
 	uint8 ROM_type;
 	uint8 ROM_type2;
-	uint8 reserve[8];
+	uint8 flags8;
+	uint8 reserve[7];
 
 	void cleanup()
 	{
