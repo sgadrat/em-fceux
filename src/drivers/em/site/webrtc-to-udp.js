@@ -8,6 +8,7 @@ var wtu = {
 	 *  {
 	 *    "address": string, // IP or host of the relay
 	 *    "port": int, // Port on which the relay listens for connection offers
+	 *    "ssl": bool, // True to connect to the relay server with a secure web socket
 	 *  }
 	 *
 	 * destination properties:
@@ -20,7 +21,7 @@ var wtu = {
 		return new Promise(function(fulfill, reject) {
 			var conn = null;
 			var chan = null;
-			var sock = new WebSocket('ws://'+ relay_server.address +':'+ relay_server.port +'/');
+			var sock = new WebSocket((relay_server.ssl?'wss':'ws') +'://'+ relay_server.address +':'+ relay_server.port +'/');
 			sock.onopen = function(e) {
 				conn = new RTCPeerConnection({
 					iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -28,26 +29,24 @@ var wtu = {
 				chan = conn.createDataChannel("udp relay", {ordered: false, maxRetransmits: 0});
 
 				conn.onicecandidate = function(e) {
-					if (e.candidate) {
-						if (e.candidate.candidate !== '') {
-							console.log('sending an ICE candidate');
+					if (e.candidate) { // candidate is null when the list is complete
+						if (e.candidate.candidate !== '') { // Firefox adds an empty candidate at the end of the list
+							// Send the ICE candidate over websocket
 							sock.send(JSON.stringify({
 								type: 'ice.candidate',
 								candidate: e.candidate,
 							}));
 						}
-					}else {
-						console.log('end of candidates');
 					}
 				};
 
 				chan.onopen = function(e) {
-					console.log("conection opened");
+					// Connection opened, fulfill the promise
 					fulfill(chan);
 				};
 
 				conn.createOffer().then(function(offer) {
-					console.log('created offer');
+					// Created offer, set it as local description and send it to the relay
 					conn.setLocalDescription(offer).then(function () {
 						sock.send(JSON.stringify({
 							type: 'relay.offer',
@@ -61,13 +60,11 @@ var wtu = {
 			sock.onmessage = function(e) {
 				msg = JSON.parse(e.data);
 				if (msg.type === 'ice.candidate') {
-					console.log('got remote ICE candidate');
 					conn.addIceCandidate(msg.candidate);
 				}else if (msg.type === 'ice.answer') {
-					console.log('got ICE answer');
 					conn.setRemoteDescription(msg.answer);
 				}else {
-					console.log('unknown message type on websocket: '+ e.data);
+					console.error('unknown message type on websocket: '+ e.data);
 				}
 			};
 		});

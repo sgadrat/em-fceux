@@ -207,8 +207,8 @@ toggleSound : (function() {
 
 	createUdpSocket : function(address, port) {
 		wtu.get_channel(
-			{'address': address, 'port': 3003},    // Relay server, port is hardcoded
-			{'address': '127.0.0.1', 'port': port} // Game server, expect it to be cohosted with the relay
+			{'address': address, 'port': 3003, 'ssl': true}, // Relay server, port is hardcoded
+			{'address': '127.0.0.1', 'port': port}           // Game server, expect it to be cohosted with the relay
 		)
 		.then(function(chan) {
 			chan.binaryType = 'arraybuffer'; // Firefox implements the spec which says "blob" by default. Others are rebels. Let's get the same behaviour everywhere.
@@ -262,8 +262,8 @@ toggleSound : (function() {
 		}
 
 		wtu.get_channel(
-			{'address': address, 'port': 3003},    // Relay server, port is hardcoded
-			{'address': '127.0.0.1', 'port': port} // Game server, expect it to be cohosted with the relay
+			{'address': address, 'port': 3003, 'ssl': true}, // Relay server, port is hardcoded
+			{'address': '127.0.0.1', 'port': port},          // Game server, expect it to be cohosted with the relay
 		)
 		.then(function(chan) {
 			chan.binaryType = 'arraybuffer'; // Firefox implements the spec which says "blob" by default. Others are rebels. Let's get the same behaviour everywhere.
