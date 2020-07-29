@@ -261,6 +261,8 @@ toggleSound : (function() {
 			FCEM.pingResult.push(null);
 		}
 
+		++number_of_pings; //HACK onemoreping: do one more ping because, apparently, RTT of the first message is longer in WebRTC
+
 		wtu.get_channel(
 			{'address': address, 'port': 3003, 'ssl': true}, // Relay server, port is hardcoded
 			{'address': '127.0.0.1', 'port': port},          // Game server, expect it to be cohosted with the relay
@@ -277,7 +279,9 @@ toggleSound : (function() {
 					let series = v.getUint8(1);
 					let number = v.getUint8(2);
 					let send_time = v.getUint32(3, true);
+					--number; if (number < 0) {return;} //HACK onemoreping: ignore extra ping
 					if (series === FCEM.pingSeries && number < FCEM.pingResult.length) {
+						console.log("ping["+number+"]: "+ (receive_time - send_time) +"ms");
 						FCEM.pingResult[number] = receive_time - send_time;
 					}else console.error('ignored pong: bad data');
 				}else console.error('ignored pong: bad type #'+ v.getUint8(0));
