@@ -12,7 +12,7 @@ fi
 echo $EMSCRIPTEN_ROOT
 
 NUM_CPUS=`getconf _NPROCESSORS_ONLN`
-python2 /usr/lib/emscripten/emscons scons -j $NUM_CPUS $@
+/usr/lib/emscripten/emscons scons -j $NUM_CPUS $@
 
 # TODO: tsone: following should be added to Scons scripts?
 config_js=src/drivers/em/site/config.js

@@ -203,8 +203,9 @@ else:
       print('Could not find liblua, exiting!')
       Exit(1)
   # "--as-needed" no longer available on OSX (probably BSD as well? TODO: test)
-  if env['PLATFORM'] != 'darwin':
-    env.Append(LINKFLAGS=['-Wl,--as-needed'])
+  # no more supported in unix it seems
+  #if env['PLATFORM'] != 'darwin':
+  #  env.Append(LINKFLAGS=['-Wl,--as-needed'])
 
   ### Search for gd if we're not in Windows
   if env['PLATFORM'] != 'win32' and env['PLATFORM'] != 'cygwin' and env['CREATE_AVI'] and env['LOGO']:
@@ -246,9 +247,11 @@ if env['RELEASE']:
   if env['EMSCRIPTEN']:
     common = ''
     common += ' -s STRICT=1'
-    common += ' -O3 --llvm-lto 3'
+    common += ' -O3'
+	#common += ' --llvm-lto 3' # emcc 2.0.2 complains, due to commit https://github.com/emscripten-core/emscripten/commit/bb8f39d68ef323be291b9aada658ef0d4309b6a1
+    common += ' -flto'
     common += ' -fno-exceptions -fno-rtti'
-    common += ' -s AGGRESSIVE_VARIABLE_ELIMINATION=1'
+    #common += ' -s AGGRESSIVE_VARIABLE_ELIMINATION=1' # useless in wasm, removed since https://github.com/emscripten-core/emscripten/commit/27f2e127235d31c8ce65b134033d8dadc43eed4b
     common += ' -s ASSERTIONS=0'
     env.Append(CCFLAGS = common)
     env.Append(LINKFLAGS = common)
