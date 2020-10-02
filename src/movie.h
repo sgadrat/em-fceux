@@ -269,9 +269,9 @@ private:
 };
 
 extern MovieData currMovieData;
-#ifndef __EMSCRIPTEN__
+//#ifndef __EMSCRIPTEN__
 extern int currFrameCounter;
-#endif
+//#endif
 extern char curMovieFilename[512];
 extern bool subtitlesOnAVI;
 extern bool fullSaveStateLoads;

@@ -92,7 +92,7 @@ static uint8 LastStrobe;
 bool replaceP2StartWithMicrophone = false;
 
 #ifdef __EMSCRIPTEN__
-static int currFrameCounter = 0;
+//static int currFrameCounter = 0;
 #endif
 
 extern uint8 coinon;
@@ -347,6 +347,10 @@ void FCEU_UpdateInput(void)
 	if(FCEUnetplay)
 		NetplayUpdate(joy);
 
+#ifdef __EMSCRIPTEN__
+	// FCEUMOV_AddInputState is a dummy macro in em-fceux, but updating frame counter is still really nice
+	++currFrameCounter;
+#endif
 	FCEUMOV_AddInputState();
 
 	//TODO - should this apply to the movie data? should this be displayed in the input hud?

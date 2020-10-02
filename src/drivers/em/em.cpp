@@ -21,6 +21,16 @@
 #include "../../fceu.h"
 #include "../../version.h"
 #include <emscripten.h>
+#include <chrono>
+
+//dbg
+//#include "../../cheat.h"
+static uint8 dbg_readbyte(int A) {
+	return ARead[A](A);
+}
+
+//#include "../../movie.h" // Should use FCEUMOV_GetFrame(), but currFrameCounter seems hacked in em-fceux
+extern int currFrameCounter;
 
 
 // Number of frames to skip per regular frame when frameskipping.
@@ -76,6 +86,7 @@ static int LoadGame(const char *path)
 	return 1;
 }
 
+static uint64_t n_frames_emulated = 0;
 static void EmulateFrame(int frameskipmode)
 {
 	uint8 *gfx = 0;
@@ -85,8 +96,10 @@ static void EmulateFrame(int frameskipmode)
 	FCEUD_UpdateInput();
 	FCEUI_Emulate(&gfx, &sound, &ssize, frameskipmode);
 	Sound_Write(sound, ssize);
+	++n_frames_emulated;
 }
 
+//TODO je pense que c'est là qu'il faut skip en fonction du temps
 static int DoFrame()
 {
 	if (em_no_waiting) {
@@ -115,6 +128,36 @@ static int DoFrame()
 	}
 
 	EmulateFrame(0);
+	static auto time_begin = std::chrono::steady_clock::now();
+	static auto time_last_report = time_begin;
+	auto const report_frequency = std::chrono::seconds(10);
+	double const fps = (FSettings.PAL ? PAL_FPS : NTSC_FPS);
+	//auto const frame_duration = std::chrono::microseconds(1000000/fps); // Rounded approximation
+	auto now = std::chrono::steady_clock::now();
+	if (now - time_last_report >= report_frequency) {
+		time_last_report += report_frequency;
+
+		std::chrono::microseconds time_since_begining = std::chrono::duration_cast<std::chrono::microseconds>(now - time_begin);
+		double const ideal_frame_count = (time_since_begining.count() * fps) / 1000000; // TODO may avoid to hardcode 1000000, since it is microseconds.period
+		int const actual_frame = currFrameCounter;
+		uint32_t const nes_frame_count =
+			uint32_t(dbg_readbyte(0xe4)) +
+			(uint32_t(dbg_readbyte(0xe5)) << 8) +
+			(uint32_t(dbg_readbyte(0xe6)) << 16) +
+			(uint32_t(dbg_readbyte(0xe7)) << 24)
+		;
+		//int const actual_frame = FCEUMOV_GetFrame();
+		std::cout <<
+			"cur_time=" << std::chrono::duration_cast<std::chrono::seconds>(time_since_begining).count() << "s (" << ideal_frame_count << " frames)" << ' ' <<
+			"n_emulated_frames=" << n_frames_emulated << ' ' <<
+			"actual_frame=" << actual_frame << ' ' <<
+			"game_frame=" << nes_frame_count << ' ' <<
+			"turbo=" << uint16_t(em_no_waiting) << ' ' <<
+			"em_sound_frame_samples=" << em_sound_frame_samples << ' ' <<
+			"em_sound_rate = " << em_sound_rate << ' ' <<
+			"PAL_FPS=" << PAL_FPS << ' ' <<
+		'\n';
+	}
 	return 1;
 }
 
