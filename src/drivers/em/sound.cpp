@@ -133,7 +133,8 @@ static void AudioSilence()
 }
 
 // Callback for filling HW audio buffer.
-static void AudioCallback()
+extern "C" {
+void FCEM_AudioCallback()
 {
 	if (!EmulationPaused && !s_silenced) {
 		AudioCopy();
@@ -145,6 +146,7 @@ static void AudioCallback()
 // FIXME: tsone: hard-coded SOUND_HW_BUF_MAX
 		consumeBuffer(SOUND_HW_BUF_MAX);
 	}
+}
 }
 
 void Sound_Silence(int option)
@@ -167,10 +169,10 @@ static int AudioContextInit()
 		FCEM.scriptProcessorNode = FCEM.audioContext.createScriptProcessor($0, 0, 1);
 		FCEM.scriptProcessorNode.onaudioprocess = function(ev) {
 			FCEM.currentOutputBuffer = ev.outputBuffer;
-			Module.dynCall_v($1);
+			_FCEM_AudioCallback();
 		};
 		FCEM.scriptProcessorNode.connect(FCEM.audioContext.destination);
-	}, SOUND_HW_BUF_MAX, AudioCallback);
+	}, SOUND_HW_BUF_MAX);
 
 	int sampleRate = EM_ASM_INT_V({
 		return FCEM.audioContext.sampleRate;
