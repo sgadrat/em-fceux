@@ -188,7 +188,7 @@ int Sound_IsInitialized()
 	}
 
 	if (EM_ASM_INT_V({
-		return typeof FCEM.audioContext === 'undefined';
+		return (typeof FCEM.audioContext === 'undefined') || FCEM.audioContext.state !== 'running';
 	})) {
 		return 0;
 	}

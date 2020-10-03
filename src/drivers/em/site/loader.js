@@ -62,18 +62,13 @@ toggleSound : (function() {
     FCEM.showControls(false);
   },
   createAudioContext : function() {
-    if (typeof FCEM.audioContext === 'undefined') {
+    if (typeof FCEM.audioContext === 'undefined' || FCEM.audioContext.state !== 'running') {
       if (typeof AudioContext !== 'undefined') {
         FCEM.audioContext = new AudioContext();
       } else if (typeof webkitAudioContext !== 'undefined') {
         FCEM.audioContext = new webkitAudioContext();
       }
       FCEM.audioContext.resume();
-    }
-
-    // Avoid keeping a stuck audio context as it freezes FCEUX
-    if (FCEM.audioContext.state !== 'running') {
-        delete FCEM.audioContext;
     }
   },
   startGame : function(path) {
