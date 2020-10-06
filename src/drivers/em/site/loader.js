@@ -615,6 +615,23 @@ document.addEventListener("keydown", function(e) {
   FCEV.catchKey = key;
 });
 
+document.getElementById("current_msg").addEventListener("click", function(e) {
+	document.getElementById("current_msg").className = 'hidden';
+});
+GuiMessage = {
+	show: function(title, body, class_name) {
+		var el = document.getElementById("current_msg");
+		el.innerHTML = '<div class="msg_title">'+ title +'</div><div class="msg_body">'+ body +'</div>';
+		el.className = class_name;
+	},
+	warn: function(title, body) {
+		GuiMessage.show(title, body, 'warning');
+	},
+	error: function(title, body) {
+		GuiMessage.show(title, body, 'error');
+	},
+};
+
 // Must scan/poll as Gamepad API doesn't send input events...
 setInterval(function() {
   if (!FCEV.catchEnabled) {

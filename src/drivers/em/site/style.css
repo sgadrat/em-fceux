@@ -103,6 +103,49 @@ canvas.emscripten {
   display: none;
 }
 
+#messages {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+#messages div.warning {
+  display: inline-block;
+  position: absolute;
+  bottom: 10%;
+  right: 5%;
+  padding:1em;
+  font-size:xx-large;
+  border-radius:1.5em .5em 1.5em .5em;
+  max-width: 80%;
+
+  background-color: #a69b0ae8;
+  color:black;
+  border: #585208 solid;
+}
+#messages div.error {
+  display: inline-block;
+  position: absolute;
+  bottom: 10%;
+  right: 5%;
+  padding:1em;
+  font-size:xx-large;
+  border-radius:1.5em .5em 1.5em .5em;
+  max-width: 80%;
+
+  background-color: #af2121e8;
+  color:black;
+  border: #58080d solid;
+}
+#messages div.hidden {
+  display: none;
+}
+#messages div .msg_title {
+  font-weight: bold;
+  margin-bottom: 1em;
+}
+
 #gamepads {
   position: absolute;
   left: 0;
