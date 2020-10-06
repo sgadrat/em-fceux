@@ -337,6 +337,20 @@ toggleSound : (function() {
 		FCEM.pingResult = null;
 		return result;
 	},
+
+	// Debug API
+	timingInfo : function() {
+		var cpp_timing_table_addr = FCEM.getTimingInfo();
+		var info_names = [
+			'emulated_fps',
+			'emulated_min', 'emulated_max', 'emulated_avg',
+		];
+		var result = {};
+		for (var info_idx = 0; info_idx < info_names.length; ++info_idx) {
+			result[info_names[info_idx]] = getValue(cpp_timing_table_addr + 4*info_idx, 'i32');
+		}
+		return result;
+	},
 };
 
 var FCEV = {
@@ -494,6 +508,7 @@ var Module = {
     FCEM.bindGamepad = Module.cwrap('FCEM_BindGamepad', null, ['number', 'number']);
     FCEM.silenceSound = Module.cwrap('FCEM_SilenceSound', null, ['number']);
 	FCEM.getGamepadState = Module.cwrap('FCEM_GetGamepadState', 'number', ['number']);
+	FCEM.getTimingInfo = Module.cwrap('FCEM_getTimingInfo', 'number', []);
     // HACK: Disable default fullscreen handlers. See Emscripten's library_browser.js
     // The handlers forces the canvas size by setting css style width and height with
     // "!important" flag. Workaround is to disable the default fullscreen handlers.

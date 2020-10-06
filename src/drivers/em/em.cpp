@@ -21,6 +21,8 @@
 #include "../../fceu.h"
 #include "../../version.h"
 #include <emscripten.h>
+
+#include <array>
 #include <chrono>
 
 //dbg
@@ -99,9 +101,18 @@ static void EmulateFrame(int frameskipmode)
 	++n_frames_emulated;
 }
 
+std::array<uint32_t, 4> em_timing_info;
+extern "C" {
+uint32_t* FCEM_getTimingInfo() {
+	return em_timing_info.data();
+}
+}
+
 //TODO je pense que c'est là qu'il faut skip en fonction du temps
 static int DoFrame()
 {
+	auto const dbg_begin_frame = n_frames_emulated;
+
 	if (em_no_waiting) {
 		for (int i = 0; i < TURBO_FRAMESKIPS; ++i) {
 			EmulateFrame(2);
@@ -111,12 +122,24 @@ static int DoFrame()
 	// Get the number of frames to fill the audio buffer.
 	int frames = (SOUND_BUF_MAX - Sound_GetBufferCount()) / em_sound_frame_samples;
 
+	//DBG
+	static uint32_t total_emulated = 0;
+	static uint32_t total_rounds = 0;
+	static uint32_t nb_skips = 0;
+	static uint64_t max_frames = 0;
+	static uint64_t min_frames = 99999;
+	max_frames = (frames > max_frames ? frames : max_frames);
+	min_frames = (frames < min_frames ? frames : min_frames);
+	++total_rounds;
+
 	// It's possible audio to go ahead of visuals. If so, skip all emulation for this frame.
 // TODO: tsone: this is not a good solution as it may cause unnecessary skipping in emulation
 	if (Sound_IsInitialized() && frames <= 0) {
+		++nb_skips;
 		return 0;
 	}
 
+	//TODO rbidon: maybe be more aggressive here and sync any number of missing frames (stb avoids flickering/blinking every other frame, but needs best timing possible for networking)
 	// Skip frames (video) to fill the audio buffer. Leave two frames free for next requestAnimationFrame in case they come too frequently.
 	if (Sound_IsInitialized() && (frames > 3)) {
 		// Skip only even numbers of frames to correctly display flickering sprites.
@@ -128,6 +151,15 @@ static int DoFrame()
 	}
 
 	EmulateFrame(0);
+
+	//DBG
+	uint64_t const n_frames_emulated_this_round = n_frames_emulated - dbg_begin_frame;
+	static uint64_t max_emulated = 0;
+	static uint64_t min_emulated = 99999;
+	max_emulated = (n_frames_emulated_this_round > max_emulated ? n_frames_emulated_this_round : max_emulated);
+	min_emulated = (n_frames_emulated_this_round < min_emulated ? n_frames_emulated_this_round : min_emulated);
+	total_emulated += n_frames_emulated_this_round;
+
 	static auto time_begin = std::chrono::steady_clock::now();
 	static auto time_last_report = time_begin;
 	auto const report_frequency = std::chrono::seconds(10);
@@ -137,16 +169,19 @@ static int DoFrame()
 	if (now - time_last_report >= report_frequency) {
 		time_last_report += report_frequency;
 
+		// Compute complex info
 		std::chrono::microseconds time_since_begining = std::chrono::duration_cast<std::chrono::microseconds>(now - time_begin);
 		double const ideal_frame_count = (time_since_begining.count() * fps) / 1000000; // TODO may avoid to hardcode 1000000, since it is microseconds.period
 		int const actual_frame = currFrameCounter;
+		//int const actual_frame = FCEUMOV_GetFrame();
 		uint32_t const nes_frame_count =
 			uint32_t(dbg_readbyte(0xe4)) +
 			(uint32_t(dbg_readbyte(0xe5)) << 8) +
 			(uint32_t(dbg_readbyte(0xe6)) << 16) +
 			(uint32_t(dbg_readbyte(0xe7)) << 24)
 		;
-		//int const actual_frame = FCEUMOV_GetFrame();
+
+		// Display info
 		std::cout <<
 			"cur_time=" << std::chrono::duration_cast<std::chrono::seconds>(time_since_begining).count() << "s (" << ideal_frame_count << " frames)" << ' ' <<
 			"n_emulated_frames=" << n_frames_emulated << ' ' <<
@@ -156,8 +191,22 @@ static int DoFrame()
 			"em_sound_frame_samples=" << em_sound_frame_samples << ' ' <<
 			"em_sound_rate = " << em_sound_rate << ' ' <<
 			"PAL_FPS=" << PAL_FPS << ' ' <<
+			"emulated=[" << min_emulated << " ; " << max_emulated << ']' << ' ' <<
+			"frames=[" << min_frames << " ; " << max_frames << " - " << nb_skips << " skips - " << (double(total_emulated)/total_rounds) << "/round]" << ' ' <<
 		'\n';
+
+		// Make info available to JS
+		/*emulated_fps*/ em_timing_info[0] = .5 + (1000. * (double(n_frames_emulated) / std::chrono::duration_cast<std::chrono::seconds>(time_since_begining).count()));
+		/*emulated_min*/ em_timing_info[1] = nb_skips > 0 ? 0 : min_emulated;
+		/*emulated_max*/ em_timing_info[2] = max_emulated;
+		/*emulated_avg*/ em_timing_info[3] = .5 + (double(total_emulated) / total_rounds);
+
+		// Reset section counters
+		min_frames = min_emulated = 99999;
+		max_frames = max_emulated = nb_skips = 0;
+		total_emulated = total_rounds = 0;
 	}
+
 	return 1;
 }
 
