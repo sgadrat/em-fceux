@@ -342,8 +342,9 @@ toggleSound : (function() {
 	timingInfo : function() {
 		var cpp_timing_table_addr = FCEM.getTimingInfo();
 		var info_names = [
-			'emulated_fps',
-			'emulated_min', 'emulated_max', 'emulated_avg',
+			'system_fps', 'emulated_fps',
+			'ideal_frame_cnt', 'frame_cnt',
+			'emulated_min', 'emulated_max', 'emulated_avg', 'nb_skips'
 		];
 		var result = {};
 		for (var info_idx = 0; info_idx < info_names.length; ++info_idx) {
