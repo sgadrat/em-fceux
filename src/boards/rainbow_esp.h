@@ -32,8 +32,8 @@ private:
 	// Defined message types from CPU to ESP
 	enum class n2e_cmds_t : uint8 {
 		GET_ESP_STATUS,
-		DEBUG_GET_CONFIG,
-		DEBUG_SET_CONFIG,
+		DEBUG_GET_LEVEL,
+		DEBUG_SET_LEVEL,
 		DEBUG_LOG,
 		CLEAR_BUFFERS,
 		E2N_BUFFER_DROP,
@@ -69,7 +69,7 @@ private:
 	// Defined message types from ESP to CPU
 	enum class e2n_cmds_t : uint8 {
 		READY,
-		DEBUG_CONFIG,
+		DEBUG_LEVEL,
 
 		FILE_EXISTS,
 		FILE_DELETE,
