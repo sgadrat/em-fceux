@@ -56,6 +56,7 @@ if 'EMSCRIPTEN_TOOL_PATH' in os.environ:
   env['LOGO'] = 0
   env['NOCHEAT'] = 1
   env.Tool('emscripten', toolpath=[os.environ['EMSCRIPTEN_TOOL_PATH']])
+  env.Replace(LINK=os.path.join(os.environ.get('EMSCRIPTEN_ROOT'), 'em++'))
   env.Replace(PROGSUFFIX = [".js"])
   exportsList = [
     'main',
