@@ -205,8 +205,11 @@ toggleSound : (function() {
 	// Udp socket API for C++ rainbow mapper
 	udpChannel : null,
 	udpInputBuffer : [],
+	udpOutputBuffer : null, // null: no possible buffering, array: each element will be sent on next occasion
 
 	createUdpSocket : function(address, port) {
+		FCEM.udpOutputBuffer = [];
+
 		wtu.get_channel(
 			{'address': address, 'port': 3003, 'ssl': true}, // Relay server, port is hardcoded
 			{'address': '127.0.0.1', 'port': port}           // Game server, expect it to be cohosted with the relay
@@ -222,6 +225,12 @@ toggleSound : (function() {
 				FCEM.udpChannel = null;
 				udpInputBuffer = [];
 			};
+
+			for (let i = 0; i < FCEM.udpOutputBuffer.length; ++i) {
+				console.log('send deleayed packet');
+				FCEM.udpChannel.send(FCEM.udpOutputBuffer[i]);
+			}
+			FCEM.udpOutputBuffer = null;
 		});
 		return 1;
 	},
@@ -233,8 +242,14 @@ toggleSound : (function() {
 	},
 
 	udpSend : function(socket, payload) {
-		if (socket === 1 && FCEM.udpChannel !== null) {
-			FCEM.udpChannel.send(payload);
+		if (socket === 1) {
+			if (FCEM.udpChannel !== null) {
+				FCEM.udpChannel.send(payload);
+			}else if (FCEM.udpOutputBuffer !== null) {
+				console.log('udpSend: delay packet');
+				// Avoid buffering more than one packet, it would be calling for trouble with the client assuming packet has been lost
+				FCEM.udpOutputBuffer = [payload];
+			}
 		}
 	},
 
