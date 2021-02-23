@@ -971,7 +971,7 @@ void RAINBOW_Init(CartInfo *info) {
 	GameStateRestore = StateRestore;
 
 	// WRAM
-	if (/*info->wram_size != 0*/ false) //HACK info->vram_size does not exists in fceux 2.2.2 (set value according to super tilt bro needs, sorry others)
+	if (/*info->wram_size != 0*/ true) //HACK info->vram_size does not exists in fceux 2.2.2 (set value according to super tilt bro needs, sorry others)
 	{
 		WRAM = (uint8*)FCEU_gmalloc(WRAMSIZE);
 		SetupCartPRGMapping(0x10, WRAM, WRAMSIZE, 1);
