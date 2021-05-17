@@ -649,6 +649,8 @@ static void RainbowPPUWrite(uint32 A, uint8 V) {
 	// It fails to compile because it is an inline function (while declared in a .h
 	//  It may be a simple error, just remove the "inline" keywork and it works
 	//  but it comes with a "new ppu" comment, em-fceux does not support new ppu (performance reasons they say)
+	// Update: "inline" was a real issue, now fixed. Keeping it commented because the note about new ppu.
+	// TODO investigate if it should be uncommented or completely removed.
 }
 
 static void RainbowPower(void) {
