@@ -384,6 +384,7 @@ void BrokeStudioFirmware::processBufferedMessage() {
 
 			switch (this->active_protocol) {
 			case server_protocol_t::WEBSOCKET:
+			case server_protocol_t::WEBSOCKET_SECURED:
 				this->sendMessageToServer(payload_begin, payload_end);
 				break;
 			case server_protocol_t::UDP:
