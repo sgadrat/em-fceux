@@ -26,6 +26,14 @@
 #define UDBG_FLOOD(...)
 #endif
 
+#if RAINBOW_DEBUG >= 1
+#include "../debug.h"
+namespace {
+uint64_t wall_clock_milli() {
+};
+}
+#endif
+
 namespace {
 
 std::array<std::string, NUM_FILE_PATHS> dir_names = { "SAVE", "ROMS", "USER" };
@@ -680,10 +688,13 @@ void BrokeStudioFirmware::sendMessageToServer(I begin, I end) {
 template<class I>
 void BrokeStudioFirmware::sendUdpDatagramToServer(I begin, I end) {
 #if RAINBOW_DEBUG >= 1
-	FCEU_printf("RAINBOW udp datagram to send: ");
-	for (I cur = begin; cur < end; ++cur) {
-		FCEU_printf("%02x ", *cur);
-	}
+	FCEU_printf("RAINBOW %lu udp datagram to send", wall_clock_milli());
+#	if RAINBOW_DEBUG >= 2
+	FCEU_printf(": ");
+ 	for (I cur = begin; cur < end; ++cur) {
+ 		FCEU_printf("%02x ", *cur);
+ 	}
+#	endif
 	FCEU_printf("\n");
 #endif
 
