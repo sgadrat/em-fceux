@@ -262,8 +262,12 @@ void BrokeStudioFirmware::processBufferedMessage() {
 			uint8 status;
 			switch (this->active_protocol) {
 			case server_protocol_t::WEBSOCKET:
+			case server_protocol_t::WEBSOCKET_SECURED:
 				status = 0; //TODO
 				break;
+			case server_protocol_t::TCP:
+			case server_protocol_t::TCP_SECURED:
+				status = 0; //TODO
 			case server_protocol_t::UDP:
 				status = 0; //TODO
 				break;
@@ -298,8 +302,8 @@ void BrokeStudioFirmware::processBufferedMessage() {
 				}
 			}
 			break;
-		case toesp_cmds_t::SERVER_GET_PROTOCOL: {
-			UDBG("RAINBOW BrokeStudioFirmware received message SERVER_GET_PROTOCOL\n");
+		case toesp_cmds_t::SERVER_SET_PROTOCOL: {
+			UDBG("RAINBOW BrokeStudioFirmware received message SERVER_SET_PROTOCOL\n");
 			if (message_size == 2) {
 				server_protocol_t const requested_protocol = static_cast<server_protocol_t>(this->rx_buffer.at(2));
 				if (requested_protocol > server_protocol_t::UDP) {
@@ -518,7 +522,7 @@ void BrokeStudioFirmware::processBufferedMessage() {
 						this->tx_messages.push_back({
 							2,
 							static_cast<uint8>(fromesp_cmds_t::FILE_DELETE),
-							0
+							static_cast<uint8>(file_delete_results_t::SUCCESS)
 						});
 						this->saveFiles();
 					}else {
@@ -526,7 +530,7 @@ void BrokeStudioFirmware::processBufferedMessage() {
 						this->tx_messages.push_back({
 							2,
 							static_cast<uint8>(fromesp_cmds_t::FILE_DELETE),
-							2
+							static_cast<uint8>(file_delete_results_t::FILE_NOT_FOUND)
 						});
 					}
 				}else {
@@ -534,7 +538,7 @@ void BrokeStudioFirmware::processBufferedMessage() {
 					this->tx_messages.push_back({
 						2,
 						static_cast<uint8>(fromesp_cmds_t::FILE_DELETE),
-						1
+						static_cast<uint8>(file_delete_results_t::INVALID_PATH_OR_FILE)
 					});
 				}
 			}
@@ -694,6 +698,53 @@ void BrokeStudioFirmware::processBufferedMessage() {
 				}
 			}
 			break;
+		case toesp_cmds_t::FILE_DOWNLOAD:
+			UDBG("RAINBOW BrokeStudioFirmware received message FILE_DOWNLOAD\n");
+			if (message_size > 3) {
+				uint8 const path = this->rx_buffer.at(2);
+				uint8 const file = this->rx_buffer.at(3);
+				if (path < NUM_FILE_PATHS && file < NUM_FILES) {
+					if (this->file_exists[path][file]) {
+						// File exists, let's delete it
+						this->files[path][file].clear();
+						this->file_exists[path][file] = false;
+					}
+				}
+				else {
+					// Invalide path / file
+					this->tx_messages.push_back({
+						2,
+						static_cast<uint8>(fromesp_cmds_t::FILE_DOWNLOAD),
+						static_cast<uint8>(file_download_results_t::INVALID_PATH_OR_FILE)
+					});
+					break;
+				}
+				// TODO... download file
+				/*
+				if(downloadFile(url, path, filename) {
+					this->tx_messages.push_back({
+						2,
+						static_cast<uint8>(fromesp_cmds_t::FILE_DOWNLOAD),
+						static_cast<uint8>(file_download_results_t::SUCCESS)
+					});
+				}else {
+					this->tx_messages.push_back({
+						2,
+						static_cast<uint8>(fromesp_cmds_t::FILE_DOWNLOAD),
+						static_cast<uint8>(file_download_results_t::DOWNLOAD_FAILED)
+					});
+				}
+				*/
+			}
+			break;
+
+
+
+
+
+
+
+
 		default:
 			UDBG("RAINBOW BrokeStudioFirmware received unknown message %02x\n", this->rx_buffer.at(1));
 			break;
@@ -858,15 +909,18 @@ void BrokeStudioFirmware::closeConnection() {
 	}, this->udp_socket);
 	this->udp_socket = -1;
 
+	//TODO close TCP connection
 	//TODO close ws socket
 }
 
 void BrokeStudioFirmware::openConnection() {
 	this->closeConnection();
 
-	if (this->active_protocol == server_protocol_t::WEBSOCKET) {
+	if ((this->active_protocol == server_protocol_t::WEBSOCKET) || (this->active_protocol == server_protocol_t::WEBSOCKET_SECURED)) {
 		//TODO
-	}else {
+	}else if ((this->active_protocol == server_protocol_t::TCP) || (this->active_protocol == server_protocol_t::TCP_SECURED)) {
+		//TODO
+	}else if (this->active_protocol == server_protocol_t::UDP) {
 		this->udp_socket = EM_ASM_INT({
 			return FCEM.createUdpSocket(UTF8ToString($0), $1);
 		}, this->server_settings_address.c_str(), this->server_settings_port);
