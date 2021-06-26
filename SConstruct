@@ -74,7 +74,7 @@ if 'EMSCRIPTEN_TOOL_PATH' in os.environ:
   ]
   exports = '-s EXPORTED_FUNCTIONS=\'["_' + '","_'.join(exportsList) + '"]\''
   env.Append(LINKFLAGS = exports)
-  exports = '-s EXTRA_EXPORTED_RUNTIME_METHODS=\'["' + '","'.join(runtimeExportsList) + '"]\''
+  exports = '-s EXPORTED_RUNTIME_METHODS=\'["' + '","'.join(runtimeExportsList) + '"]\''
   env.Append(LINKFLAGS = exports)
   env.Append(LINKFLAGS = '--preload-file src/drivers/em/assets/data/@/data/')
 else:
@@ -240,9 +240,10 @@ if env['DEBUG']:
     common = ''
     common += ' -s STRICT=1'
     common += ' -O0 -g'
-    common += ' -s ASSERTIONS=2 -s SAFE_HEAP=1'
+    common += ' -s SAFE_HEAP=1'
     common += ' -s DEMANGLE_SUPPORT=1'
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = common, LINKFLAGS = common)
+    env.Append(LINKFLAGS = '-s ASSERTIONS=2')
   else:
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = ['-g', '-O0'])
 
@@ -255,10 +256,9 @@ if env['RELEASE']:
     common += ' -flto'
     common += ' -fno-exceptions -fno-rtti'
     #common += ' -s AGGRESSIVE_VARIABLE_ELIMINATION=1' # useless in wasm, removed since https://github.com/emscripten-core/emscripten/commit/27f2e127235d31c8ce65b134033d8dadc43eed4b
-    common += ' -s ASSERTIONS=0'
     env.Append(CCFLAGS = common)
     env.Append(LINKFLAGS = common)
-    env.Append(LINKFLAGS = '-strip-all')
+    env.Append(LINKFLAGS = '-s ASSERTIONS=0 -strip-all')
   else:
     env.Append(CCFLAGS = ['-O2'])
     env.Append(LINKFLAGS = ['-O2'])

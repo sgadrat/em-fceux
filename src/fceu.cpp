@@ -654,7 +654,7 @@ void UpdateAutosave(void);
 ///Skip may be passed in, if FRAMESKIP is #defined, to cause this to emulate more than one frame
 void FCEUI_Emulate(uint8 **pXBuf, int32 **SoundBuf, int32 *SoundBufSize, int skip) {
 	//skip initiates frame skip if 1, or frame skip and sound skip if 2
-	int r, ssize;
+	int ssize;
 
 	JustFrameAdvanced = false;
 
@@ -718,7 +718,7 @@ void FCEUI_Emulate(uint8 **pXBuf, int32 **SoundBuf, int32 *SoundBufSize, int ski
 #endif
 
 	if (geniestage != 1) FCEU_ApplyPeriodicCheats();
-	r = FCEUPPU_Loop(skip);
+	FCEUPPU_Loop(skip);
 
 	if (skip != 2) ssize = FlushEmulateSound();  //If skip = 2 we are skipping sound processing
 
@@ -1176,9 +1176,6 @@ bool FCEUXLoad(const char *name, FCEUFILE *fp) {
 	//validate header
 	if (memcmp(&head, "NES\x1a", 4))
 		return 0;
-
-	int mapper = (head.ROM_type >> 4);
-	mapper |= (head.ROM_type2 & 0xF0);
 
 	//choose what kind of cart to use.
 	cart = (FCEUXCart*)new NROM();

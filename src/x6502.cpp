@@ -312,16 +312,16 @@ static uint8 ZNTable[256];
 #define RMW_ZP(op)  {uint8 A; uint8 x; GetZP(A); x=RdRAM(A); op; WrRAM(A,x); break; }
 #define RMW_ZPX(op) {uint8 A; uint8 x; GetZPI(A,_X); x=RdRAM(A); op; WrRAM(A,x); break;}
 
-#define LD_IM(op)  {uint8 x; x=RdMem(_PC); _PC++; op; break;}
-#define LD_ZP(op)  {uint8 A; uint8 x; GetZP(A); x=RdRAM(A); op; break;}
-#define LD_ZPX(op)  {uint8 A; uint8 x; GetZPI(A,_X); x=RdRAM(A); op; break;}
-#define LD_ZPY(op)  {uint8 A; uint8 x; GetZPI(A,_Y); x=RdRAM(A); op; break;}
-#define LD_AB(op)  {unsigned int A; uint8 x; GetAB(A); x=RdMem(A); op; break; }
-#define LD_ABI(reg,op)  {unsigned int A; uint8 x; GetABIRD(A,reg); x=RdMem(A); op; break;}
+#define LD_IM(op)  {uint8 x __attribute__ ((unused)); x=RdMem(_PC); _PC++; op; break;}
+#define LD_ZP(op)  {uint8 A; uint8 x __attribute__ ((unused)); GetZP(A); x=RdRAM(A); op; break;}
+#define LD_ZPX(op)  {uint8 A; uint8 x __attribute__ ((unused)); GetZPI(A,_X); x=RdRAM(A); op; break;}
+#define LD_ZPY(op)  {uint8 A; uint8 x __attribute__ ((unused)); GetZPI(A,_Y); x=RdRAM(A); op; break;}
+#define LD_AB(op)  {unsigned int A; uint8 x __attribute__ ((unused)); GetAB(A); x=RdMem(A); op; break; }
+#define LD_ABI(reg,op)  {unsigned int A; uint8 x __attribute__ ((unused)); GetABIRD(A,reg); x=RdMem(A); op; break;}
 #define LD_ABX(op)  LD_ABI(_X,op)
 #define LD_ABY(op)  LD_ABI(_Y,op)
-#define LD_IX(op)  {unsigned int A; uint8 x; GetIX(A); x=RdMem(A); op; break;}
-#define LD_IY(op)  {unsigned int A; uint8 x; GetIYRD(A); x=RdMem(A); op; break;}
+#define LD_IX(op)  {unsigned int A; uint8 x __attribute__ ((unused)); GetIX(A); x=RdMem(A); op; break;}
+#define LD_IY(op)  {unsigned int A; uint8 x __attribute__ ((unused)); GetIYRD(A); x=RdMem(A); op; break;}
 
 #define ST_ZP(r)  {uint8 A; GetZP(A); WrRAM(A,r); break;}
 #define ST_ZPX(r)  {uint8 A; GetZPI(A,_X); WrRAM(A,r); break;}

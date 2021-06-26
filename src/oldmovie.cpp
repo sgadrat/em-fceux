@@ -542,13 +542,6 @@ EFCM_CONVERTRESULT convert_fcm(MovieData& md, std::string fname)
 
 	uint32 framecount;
 	uint32 rerecord_count;
-// TODO: tsone: two unused variables here, remove?
-#ifndef __EMSCRIPTEN__
-	int movieConvertOffset1=0, movieConvertOffset2=0,movieSyncHackOn=0;
-#else
-	int movieSyncHackOn=0;
-#endif
-
 
 	EMUFILE* fp = FCEUD_UTF8_fstream(fname, "rb");
 	if(!fp) return FCM_CONVERTRESULT_FAILOPEN;
@@ -605,12 +598,6 @@ EFCM_CONVERTRESULT convert_fcm(MovieData& md, std::string fname)
 	//fp->read((char*)metadata,metadata_length);
 	//convert_metadata(wcmetadata,metadata_length*4,metadata,metadata_length);
 	//md.comments.push_back(L"author " + (std::wstring)(wchar_t*)wcmetadata);
-
-	//  FCEU_PrintError("flags[0] & MOVIE_FLAG_NOSYNCHACK=%d",flags[0] & MOVIE_FLAG_NOSYNCHACK);
-	if(flags[0] & MOVIE_FLAG_NOSYNCHACK)
-		movieSyncHackOn=0;
-	else
-		movieSyncHackOn=1;
 
 	if(flags[0] & MOVIE_FLAG_PAL)
 		md.palFlag = true;

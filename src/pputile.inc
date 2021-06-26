@@ -3,7 +3,7 @@ uint8 cc;
 uint32 vadr;
 
 #ifndef PPUT_MMC5SP
-	uint8 zz;
+	uint8 zz __attribute__ ((unused));
 #else
 	uint8 xs, ys;
 	xs = X1;

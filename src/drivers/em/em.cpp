@@ -229,20 +229,6 @@ static int DriverInitialize()
 
 EMUFILE_FILE* FCEUD_UTF8_fstream(const char *fn, const char *m)
 {
-// TODO: tsone: mode variable is not even used, remove?
-	std::ios_base::openmode mode = std::ios_base::binary;
-	if(!strcmp(m,"r") || !strcmp(m,"rb"))
-		mode |= std::ios_base::in;
-	else if(!strcmp(m,"w") || !strcmp(m,"wb"))
-		mode |= std::ios_base::out | std::ios_base::trunc;
-	else if(!strcmp(m,"a") || !strcmp(m,"ab"))
-		mode |= std::ios_base::out | std::ios_base::app;
-	else if(!strcmp(m,"r+") || !strcmp(m,"r+b"))
-		mode |= std::ios_base::in | std::ios_base::out;
-	else if(!strcmp(m,"w+") || !strcmp(m,"w+b"))
-		mode |= std::ios_base::in | std::ios_base::out | std::ios_base::trunc;
-	else if(!strcmp(m,"a+") || !strcmp(m,"a+b"))
-		mode |= std::ios_base::in | std::ios_base::out | std::ios_base::app;
 	return new EMUFILE_FILE(fn, m);
 }
 
@@ -259,14 +245,12 @@ const char *FCEUD_GetCompilerString()
 
 int main(int argc, char *argv[])
 {
-	int error;
-
 	FCEUD_Message("Starting " FCEU_NAME_AND_VERSION "...\n");
 
 	Config_Init();
 
 	// initialize the infrastructure
-	error = FCEUI_Initialize();
+	FCEUI_Initialize();
 	std::string s;
 
 	// override savegame, savestate and rom directory with IndexedDB mount at /fceux
