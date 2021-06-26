@@ -5,14 +5,14 @@ hash scons 2>/dev/null || { echo >&2 "ERROR: scons not found. Please install sco
 hash python2 2>/dev/null || { echo >&2 "ERROR: python not found. Please install python."; exit 1; }
 #[ -z ${EMSDK+x} ] && { echo >&2 "ERROR: emscripten env not set. Please run 'source emsdk_env.sh'."; exit 1; }
 if [ -z ${EMSCRIPTEN_ROOT+x} ] ; then
-  DEFAULT_ROOT="/usr/lib/emscripten"
+  DEFAULT_ROOT="$(dirname $(which emscons))"
   [ -e "$DEFAULT_ROOT/emcc" ] || echo "WARNING: Failed to generate valid env EMSCRIPTEN_ROOT=$DEFAULT_ROOT. You may need to set it manually for scons."
   export EMSCRIPTEN_ROOT=$DEFAULT_ROOT
 fi
 echo $EMSCRIPTEN_ROOT
 
 NUM_CPUS=`getconf _NPROCESSORS_ONLN`
-/usr/lib/emscripten/emscons scons -j $NUM_CPUS $@
+"$EMSCRIPTEN_ROOT/emscons" scons -j $NUM_CPUS $@
 
 # TODO: tsone: following should be added to Scons scripts?
 config_js=src/drivers/em/site/config.js
