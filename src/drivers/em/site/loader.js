@@ -65,6 +65,8 @@ toggleSound : (function() {
 })(),
   onInitialSyncFromIDB : function(er) {
     assert(!er);
+
+    // Make standard dirs if not already stored in IDBFS
     try {
       FS.mkdir('/fceux/sav');
     } catch (e) {
@@ -73,9 +75,41 @@ toggleSound : (function() {
       FS.mkdir('/fceux/rom');
     } catch (e) {
     }
+    try {
+      FS.mkdir('/fceux/movie');
+    } catch (e) {
+    }
 
+    // Fetch replay
+    let s = new URLSearchParams(window.location.search)
+    if (s.has('game')) {
+      // Check that the parameter is a valid uuid
+      let game = s.get('game');
+      if (! /^[a-fA-F0-9-]+$/.test(game)) {
+        console.error('invalid game id "'+ game + '"');
+        GuiMessage.error('Replay system', 'Invalid game ID');
+      }else {
+        // Show a "loading replay ..." message
+        GuiMessage.info('Replay system', 'Loading replay ...');
+
+        var req = new XMLHttpRequest();
+        req.addEventListener('load', function() {
+          FS.writeFile('/fceux/movie/movie.fm2', this.responseText);
+          GuiMessage.info('Replay system', 'Click to start replay');
+          replayReady();
+        });
+        req.addEventListener('error', function() {
+          GuiMessage.error('Replay system', 'failed to load replay');
+        });
+        req.open('GET', 'https://www.super-tilt-bro.com/api/replay/games/'+ s.get('game') +'.fm2');
+        req.send();
+      }
+    }
+
+    // Debug: Show the contents of saved games dir
     // var savs = FS.readdir('/fceux/sav');
     // savs.forEach(function(x) { console.log('!!!! sav: ' + x); });
+
     // Write savegame and synchronize IDBFS in intervals.
     if (persistent_savegames) {
       setInterval(Module.cwrap('FCEM_OnSaveGameInterval'), 1000);
@@ -606,6 +640,7 @@ var Module = {
     FCEM.silenceSound = Module.cwrap('FCEM_SilenceSound', null, ['number']);
 	FCEM.getGamepadState = Module.cwrap('FCEM_GetGamepadState', 'number', ['number']);
 	FCEM.getTimingInfo = Module.cwrap('FCEM_getTimingInfo', 'number', []);
+	FCEM.loadMovie = Module.cwrap('FCEM_loadMovie', null, [])
     // HACK: Disable default fullscreen handlers. See Emscripten's library_browser.js
     // The handlers forces the canvas size by setting css style width and height with
     // "!important" flag. Workaround is to disable the default fullscreen handlers.
@@ -710,6 +745,14 @@ function startAudioFromPhysical() {
 document.addEventListener("keydown", startAudioFromPhysical);
 document.addEventListener("click", startAudioFromPhysical);
 
+function replayStart() {
+  document.removeEventListener("click", replayStart);
+  FCEM.loadMovie();
+}
+function replayReady() {
+    document.addEventListener("click", replayStart);
+}
+
 document.addEventListener("keydown", function(e) {
   if (!FCEV.catchEnabled) {
     return;
@@ -737,6 +780,9 @@ GuiMessage = {
 		msg.innerHTML = '<div class="msg_title">'+ title +'</div><div class="msg_body">'+ body +'</div>';
 		msg.className = class_name;
 		container.className = '';
+	},
+	info: function(title, body) {
+		GuiMessage.show(title, body, 'info');
 	},
 	warn: function(title, body) {
 		GuiMessage.show(title, body, 'warning');

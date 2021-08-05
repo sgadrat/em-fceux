@@ -56,7 +56,6 @@ rm -rf \
 	src/drivers/em/site/fceux.* \
 	src/drivers/em/site/config.js \
 	src/drivers/em/deploy/
-cp ~/workspace/nes/tilt/Super_Tilt_Bro_\(E\).nes src/drivers/em/assets/data/games/Super\ Tilt\ Bro\(E\).nes
 ./build-emscripten.sh
 ./build-site.sh
 rm -rf /tmp/super_tilt_bro
