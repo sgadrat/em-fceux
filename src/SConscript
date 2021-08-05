@@ -16,7 +16,7 @@ Export('env')
 
 if env['EMSCRIPTEN']:
   file_list.remove('netplay.cpp')
-  file_list.remove('movie.cpp')
+  #file_list.remove('movie.cpp')
   file_list.remove('cheat.cpp')
   file_list.remove('asm.cpp')
 

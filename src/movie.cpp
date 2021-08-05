@@ -13,6 +13,7 @@
 #include "movie.h"
 #include "fds.h"
 #include "vsuni.h"
+#include "drawing.h"
 #ifdef _S9XLUA_H
 #include "fceulua.h"
 #endif
@@ -840,9 +841,11 @@ void MovieData::dumpSavestateTo(std::vector<uint8>* buf, int compressionLevel)
 //begin playing an existing movie
 bool FCEUI_LoadMovie(const char *fname, bool _read_only, int _pauseframe)
 {
+	FCEU_printf("FCEUI_LoadMovie(fname=\"%s\", _read_only=%s, _pauseframe=%d)\n", fname, _read_only ? "true":"false", _pauseframe);
 	if(!FCEU_IsValidUI(FCEUI_PLAYMOVIE))
 		return true;	//adelikat: file did not fail to load, so let's return true here, just do nothing
 
+	FCEU_printf("isvalidui\n");
 	assert(fname);
 
 	//mbg 6/10/08 - we used to call StopMovie here, but that cleared curMovieFilename and gave us crashes...
@@ -852,8 +855,10 @@ bool FCEUI_LoadMovie(const char *fname, bool _read_only, int _pauseframe)
 		StopRecording();
 	//--------------
 
+	FCEU_printf("create MovieData()\n");
 	currMovieData = MovieData();
 
+	FCEU_printf("open file\n");
 	strcpy(curMovieFilename, fname);
 	FCEUFILE *fp = FCEU_fopen(fname,0,"rb",0);
 	if (!fp) return false;
@@ -874,6 +879,7 @@ bool FCEUI_LoadMovie(const char *fname, bool _read_only, int _pauseframe)
 	AddRecentMovieFile(name.c_str());
 #endif
 
+	FCEU_printf("LoadFM2\n");
 	LoadFM2(currMovieData, fp->stream, fp->size, false);
 	LoadSubtitles(currMovieData);
 	delete fp;
@@ -881,12 +887,14 @@ bool FCEUI_LoadMovie(const char *fname, bool _read_only, int _pauseframe)
 	freshMovie = true;	//Movie has been loaded, so it must be unaltered
 	if (bindSavestate) AutoSS = false;	//If bind savestate to movie is true, then their isn't a valid auto-save to load, so flag it
 	//fully reload the game to reinitialize everything before playing any movie
+	FCEU_printf("poweron\n");
 	poweron(true);
 
 	if(currMovieData.savestate.size())
 	{
 		//WE NEED TO LOAD A SAVESTATE
 		movieFromPoweron = false;
+		FCEU_printf("load savestate\n");
 		bool success = MovieData::loadSavestateFrom(&currMovieData.savestate);
 		if(!success) return true;	//adelikat: I guess return true here?  False is only for a bad movie filename, if it got this far the file was good?
 	} else {
@@ -895,13 +903,15 @@ bool FCEUI_LoadMovie(const char *fname, bool _read_only, int _pauseframe)
 
 	//if there is no savestate, we won't have this crucial piece of information at the start of the movie.
 	//so, we have to include it with the movie
+	FCEU_printf("set system\n");
 	if(currMovieData.palFlag)
 		FCEUI_SetVidSystem(1);
 	else
 		FCEUI_SetVidSystem(0);
 
 	//force the input configuration stored in the movie to apply
-	FCEUD_SetInput(currMovieData.fourscore, currMovieData.microphone, (ESI)currMovieData.ports[0], (ESI)currMovieData.ports[1], (ESIFC)currMovieData.ports[2]);
+	//FIXME sgadrat: em-fceux implementation of FCEUD_SetInput breaks gamepad 2 on this call. Seems half-implemented, and relying on the javascript to rebind keys after the original call in DriverInitialize()
+	//FCEUD_SetInput(currMovieData.fourscore, currMovieData.microphone, (ESI)currMovieData.ports[0], (ESI)currMovieData.ports[1], (ESIFC)currMovieData.ports[2]);
 
 	//stuff that should only happen when we're ready to positively commit to the replay
 	currFrameCounter = 0;
@@ -909,6 +919,7 @@ bool FCEUI_LoadMovie(const char *fname, bool _read_only, int _pauseframe)
 	movie_readonly = _read_only;
 	movieMode = MOVIEMODE_PLAY;
 
+	FCEU_printf("Replay started\n");
 	if(movie_readonly)
 		FCEU_DispMessage("Replay started Read-Only.",0);
 	else
@@ -1135,7 +1146,7 @@ void FCEU_DrawMovies(uint8 *XBuf)
 			sprintf(counterbuf,"%d (no movie)",currFrameCounter);
 
 		if(counterbuf[0])
-			DrawTextTrans(ClipSidesOffset+XBuf+FCEU_TextScanlineOffsetFromBottom(30)+1, 256, (uint8*)counterbuf, color+0x80);
+			DrawTextTrans(ClipSidesOffset+XBuf+FCEU_TextScanlineOffsetFromBottom(30)+1, (uint8*)counterbuf, color+0x80);
 	}
 	if(rerecord_display && movieMode != MOVIEMODE_INACTIVE)
 	{
@@ -1143,7 +1154,7 @@ void FCEU_DrawMovies(uint8 *XBuf)
 		sprintf(counterbuf,"%d",currMovieData.rerecordCount);
 
 		if(counterbuf[0])
-			DrawTextTrans(ClipSidesOffset+XBuf+FCEU_TextScanlineOffsetFromBottom(50)+1, 256, (uint8*)counterbuf, 0x28+0x80);
+			DrawTextTrans(ClipSidesOffset+XBuf+FCEU_TextScanlineOffsetFromBottom(50)+1, (uint8*)counterbuf, 0x28+0x80);
 	}
 }
 
@@ -1155,7 +1166,7 @@ void FCEU_DrawLagCounter(uint8 *XBuf)
 		uint8 color = (lagFlag) ? (0x16+0x80) : (0x2A+0x80);
 		sprintf(lagcounterbuf, "%d", lagCounter);
 		if(lagcounterbuf[0])
-			DrawTextTrans(ClipSidesOffset + XBuf + FCEU_TextScanlineOffsetFromBottom(40) + 1, 256, (uint8*)lagcounterbuf, color);
+			DrawTextTrans(ClipSidesOffset + XBuf + FCEU_TextScanlineOffsetFromBottom(40) + 1, (uint8*)lagcounterbuf, color);
 	}
 }
 

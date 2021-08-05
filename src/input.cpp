@@ -347,10 +347,6 @@ void FCEU_UpdateInput(void)
 	if(FCEUnetplay)
 		NetplayUpdate(joy);
 
-#ifdef __EMSCRIPTEN__
-	// FCEUMOV_AddInputState is a dummy macro in em-fceux, but updating frame counter is still really nice
-	++currFrameCounter;
-#endif
 	FCEUMOV_AddInputState();
 
 	//TODO - should this apply to the movie data? should this be displayed in the input hud?
@@ -613,9 +609,7 @@ void FCEUI_VSUniCoin(void)
 //Resets the frame counter if movie inactive and rom is reset or power-cycle
 void ResetFrameCounter()
 {
-#ifndef __EMSCRIPTEN__
 extern EMOVIEMODE movieMode;
-#endif
 	if(movieMode == MOVIEMODE_INACTIVE)
 		currFrameCounter = 0;
 }
