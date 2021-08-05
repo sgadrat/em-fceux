@@ -20,6 +20,7 @@
 #include "em.h"
 #include "../../fceu.h"
 #include "../../version.h"
+#include "../../movie.h"
 #include <emscripten.h>
 
 #include <algorithm>
@@ -40,6 +41,7 @@
 
 bool em_no_waiting = true;
 int em_scanlines = 224; // Default is NTSC, 224.
+int closeFinishedMovie = 0; // Flag for clossing movie when it is finished
 
 static int s_status = 0;
 
@@ -97,6 +99,11 @@ std::array<uint32_t, 8> em_timing_info = {0, 0, 0, 0, 0, 0, 0, 0};
 extern "C" {
 uint32_t* FCEM_getTimingInfo() {
 	return em_timing_info.data();
+}
+
+void FCEM_loadMovie() {
+	bool ret = FCEUI_LoadMovie("/fceux/movie/movie.fm2", 1, 0);
+	FCEU_printf("FCEUI_LoadMovie() -> %s\n", ret?"true":"false");
 }
 }
 

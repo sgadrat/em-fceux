@@ -67,7 +67,8 @@ if 'EMSCRIPTEN_TOOL_PATH' in os.environ:
     'FCEM_SilenceSound',
     'FCEM_GetGamepadState',
     'FCEM_AudioCallback',
-    'FCEM_getTimingInfo'
+    'FCEM_getTimingInfo',
+    'FCEM_loadMovie'
   ]
   runtimeExportsList = [
     'cwrap'

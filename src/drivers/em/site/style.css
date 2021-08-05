@@ -113,6 +113,20 @@ canvas.emscripten {
   width: 100%;
   height: 100%;
 }
+#messages div.info {
+  display: inline-block;
+  position: absolute;
+  bottom: 10%;
+  right: 5%;
+  padding:1em;
+  font-size:xx-large;
+  border-radius:1.5em .5em 1.5em .5em;
+  max-width: 80%;
+
+  background-color: #ffffffe8;
+  color:black;
+  border: black solid;
+}
 #messages div.warning {
   display: inline-block;
   position: absolute;

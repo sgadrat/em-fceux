@@ -468,8 +468,10 @@ void FCEU_DispMessageOnMovie(char *format, ...)
 		guiMessage.howlong = 0;
 }
 
-void FCEU_DispMessage(char *format, int disppos=0, ...)
+void FCEU_DispMessage([[maybe_unused]]char *format, [[maybe_unused]]int disppos=0, ...)
 {
+	// No message on emscripten, don't want it in replays
+#ifndef __EMSCRIPTEN__
 	va_list ap;
 
 	va_start(ap,disppos);
@@ -499,6 +501,7 @@ void FCEU_DispMessage(char *format, int disppos=0, ...)
 			guiMessage.howlong = 0;
 	}
 	#endif
+#endif
 }
 
 void FCEU_ResetMessages()
