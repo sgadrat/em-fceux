@@ -42,6 +42,8 @@ toggleSound : (function() {
 })(),
   onInitialSyncFromIDB : function(er) {
     assert(!er);
+
+    // Make standard dirs if not already stored in IDBFS
     try {
       FS.mkdir('/fceux/sav');
     } catch (e) {
@@ -55,217 +57,25 @@ toggleSound : (function() {
     } catch (e) {
     }
 
-	FS.writeFile('/fceux/movie/movie.fm2',
-`version 3
-emuVersion 22020
-palFlag 1
-NewPPU 1
-fourscore 0
-port0 1
-port1 1
-port2 0
-romFilename tilt_no_network_unrom_(E)
-guid d036cb92-6856-48a5-9456-40434f6f7828
-romChecksum base64:npc22x82bJ+GEfIeZEq/cQ==
-savestate base64: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
-0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|...U....|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-|0|........|........||
-`);
+    // Fetch replay
+    s = new URLSearchParams(window.location.search)
+    if (s.has('game')) {
+      //TODO check that the parameter is a valid uuid
+      //TODO show a "loading replay ..." message
+      //TODO on error, show a useful message
+      var oReq = new XMLHttpRequest();
+      oReq.addEventListener('load', function() {
+        FS.writeFile('/fceux/movie/movie.fm2', this.responseText);
+        //TODO show a "click to start replay" message
+      });
+      oReq.open('GET', 'https://www.super-tilt-bro.com/api/replay/games/'+ s.get('game') +'.fm2');
+      oReq.send();
+    }
 
+    // Debug: Show the contents of saved games dir
     // var savs = FS.readdir('/fceux/sav');
     // savs.forEach(function(x) { console.log('!!!! sav: ' + x); });
+
     // Write savegame and synchronize IDBFS in intervals.
     if (persistent_savegames) {
       setInterval(Module.cwrap('FCEM_OnSaveGameInterval'), 1000);
