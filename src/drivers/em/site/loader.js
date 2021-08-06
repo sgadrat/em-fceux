@@ -58,18 +58,29 @@ toggleSound : (function() {
     }
 
     // Fetch replay
-    s = new URLSearchParams(window.location.search)
+    let s = new URLSearchParams(window.location.search)
     if (s.has('game')) {
-      //TODO check that the parameter is a valid uuid
-      //TODO show a "loading replay ..." message
-      //TODO on error, show a useful message
-      var oReq = new XMLHttpRequest();
-      oReq.addEventListener('load', function() {
-        FS.writeFile('/fceux/movie/movie.fm2', this.responseText);
-        //TODO show a "click to start replay" message
-      });
-      oReq.open('GET', 'https://www.super-tilt-bro.com/api/replay/games/'+ s.get('game') +'.fm2');
-      oReq.send();
+      // Check that the parameter is a valid uuid
+      let game = s.get('game');
+      if (! /^[a-fA-F0-9-]+$/.test(game)) {
+        console.error('invalid game id "'+ game + '"');
+        GuiMessage.error('Replay system', 'Invalid game ID');
+      }else {
+        // Show a "loading replay ..." message
+        GuiMessage.info('Replay system', 'Loading replay ...');
+
+        var req = new XMLHttpRequest();
+        req.addEventListener('load', function() {
+          FS.writeFile('/fceux/movie/movie.fm2', this.responseText);
+          GuiMessage.info('Replay system', 'Click to start replay');
+          replayReady();
+        });
+        req.addEventListener('error', function() {
+          GuiMessage.error('Replay system', 'failed to load replay');
+        });
+        req.open('GET', 'https://www.super-tilt-bro.com/api/replay/games/'+ s.get('game') +'.fm2');
+        req.send();
+      }
     }
 
     // Debug: Show the contents of saved games dir
@@ -691,10 +702,17 @@ function startAudioFromPhysical() {
   document.removeEventListener("keydown", startAudioFromPhysical);
   document.removeEventListener("click", startAudioFromPhysical);
   hack_first_input_time = Date.now();
-  FCEM.loadMovie();
 }
 document.addEventListener("keydown", startAudioFromPhysical);
 document.addEventListener("click", startAudioFromPhysical);
+
+function replayStart() {
+  document.removeEventListener("click", replayStart);
+  FCEM.loadMovie();
+}
+function replayReady() {
+    document.addEventListener("click", replayStart);
+}
 
 document.addEventListener("keydown", function(e) {
   if (!FCEV.catchEnabled) {
@@ -720,6 +738,9 @@ GuiMessage = {
 		var el = document.getElementById("current_msg");
 		el.innerHTML = '<div class="msg_title">'+ title +'</div><div class="msg_body">'+ body +'</div>';
 		el.className = class_name;
+	},
+	info: function(title, body) {
+		GuiMessage.show(title, body, 'info');
 	},
 	warn: function(title, body) {
 		GuiMessage.show(title, body, 'warning');
