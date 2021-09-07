@@ -39,25 +39,25 @@ INPUT_HIDDEN(0x010D, 0x000, 0x00, SYSTEM_STATE_SELECT_7, "Select State 7")
 INPUT_HIDDEN(0x010E, 0x000, 0x00, SYSTEM_STATE_SELECT_8, "Select State 8")
 INPUT_HIDDEN(0x010F, 0x000, 0x00, SYSTEM_STATE_SELECT_9, "Select State 9")
 // Controller 1
-INPUT(0x0200, 0x053, 0x01, GAMEPAD0_A, "A (Controller 1)") // S
-INPUT(0x0201, 0x041, 0x11, GAMEPAD0_B, "B (Controller 1)") // A
-INPUT(0x0202, 0x051, 0x81, GAMEPAD0_SELECT, "Select (Controller 1)") // Q
-INPUT(0x0203, 0x020, 0x91, GAMEPAD0_START, "Start (Controller 1)") // Space
-INPUT(0x0204, 0x052, 0xc1, GAMEPAD0_UP, "Up (Controller 1)") // R
-INPUT(0x0205, 0x046, 0xd1, GAMEPAD0_DOWN, "Down (Controller 1)") // F
-INPUT(0x0206, 0x044, 0xe1, GAMEPAD0_LEFT, "Left (Controller 1)") // D
-INPUT(0x0207, 0x047, 0xf1, GAMEPAD0_RIGHT, "Right (Controller 1)") // G
+INPUT(0x0200, 0x051, 0x01, GAMEPAD0_A, "A (Controller 1)") // Q
+INPUT(0x0201, 0x057, 0x11, GAMEPAD0_B, "B (Controller 1)") // W
+INPUT(0x0202, 0x041, 0x81, GAMEPAD0_SELECT, "Select (Controller 1)") // A
+INPUT(0x0203, 0x00d, 0x91, GAMEPAD0_START, "Start (Controller 1)") // Enter
+INPUT(0x0204, 0x026, 0xc1, GAMEPAD0_UP, "Up (Controller 1)") // Up arrow
+INPUT(0x0205, 0x028, 0xd1, GAMEPAD0_DOWN, "Down (Controller 1)") // Down arrow
+INPUT(0x0206, 0x025, 0xe1, GAMEPAD0_LEFT, "Left (Controller 1)") // Left arrow
+INPUT(0x0207, 0x027, 0xf1, GAMEPAD0_RIGHT, "Right (Controller 1)") // Right arrow
 INPUT_HIDDEN(0x0208, 0x000, 0x41, GAMEPAD0_TURBO_A, "Turbo A (Controller 1)")
 INPUT_HIDDEN(0x0209, 0x000, 0x51, GAMEPAD0_TURBO_B, "Turbo B (Controller 1)")
 // Controller 2
-INPUT(0x0210, 0x050, 0x00, GAMEPAD1_A, "A (Controller 2)") // P
-INPUT(0x0211, 0x04f, 0x00, GAMEPAD1_B, "B (Controller 2)") // O (the letter)
-INPUT(0x0212, 0x04c, 0x00, GAMEPAD1_SELECT, "Select (Controller 2)") // L
-INPUT(0x0213, 0x00d, 0x00, GAMEPAD1_START, "Start (Controller 2)") // Enter
-INPUT(0x0214, 0x026, 0x00, GAMEPAD1_UP, "Up (Controller 2)") // Up arrow
-INPUT(0x0215, 0x028, 0x00, GAMEPAD1_DOWN, "Down (Controller 2)") // Down arrow
-INPUT(0x0216, 0x025, 0x00, GAMEPAD1_LEFT, "Left (Controller 2)") // Left arrow
-INPUT(0x0217, 0x027, 0x00, GAMEPAD1_RIGHT, "Right (Controller 2)") //Right arrow
+INPUT(0x0210, 0x037, 0x00, GAMEPAD1_A, "A (Controller 2)") // 7
+INPUT(0x0211, 0x039, 0x00, GAMEPAD1_B, "B (Controller 2)") // 9
+INPUT(0x0212, 0x031, 0x00, GAMEPAD1_SELECT, "Select (Controller 2)") // 1
+INPUT(0x0213, 0x020, 0x00, GAMEPAD1_START, "Start (Controller 2)") // Space
+INPUT(0x0214, 0x038, 0x00, GAMEPAD1_UP, "Up (Controller 2)") // 8
+INPUT(0x0215, 0x035, 0x00, GAMEPAD1_DOWN, "Down (Controller 2)") // 5
+INPUT(0x0216, 0x034, 0x00, GAMEPAD1_LEFT, "Left (Controller 2)") // 4
+INPUT(0x0217, 0x036, 0x00, GAMEPAD1_RIGHT, "Right (Controller 2)") // 6
 INPUT_HIDDEN(0x0218, 0x000, 0x00, GAMEPAD1_TURBO_A, "Turbo A (Controller 2)")
 INPUT_HIDDEN(0x0219, 0x000, 0x00, GAMEPAD1_TURBO_B, "Turbo B (Controller 2)")
 // Controller 3
