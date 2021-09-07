@@ -92,7 +92,8 @@ static uint8 LastStrobe;
 bool replaceP2StartWithMicrophone = false;
 
 #ifdef __EMSCRIPTEN__
-//static int currFrameCounter = 0;
+// Define it here, since movie.cpp is not compiled in em-fceux
+int currFrameCounter = 0;
 #endif
 
 extern uint8 coinon;
