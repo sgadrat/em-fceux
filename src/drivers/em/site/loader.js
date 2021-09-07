@@ -687,14 +687,17 @@ document.addEventListener("keydown", function(e) {
   FCEV.catchKey = key;
 });
 
-document.getElementById("current_msg").addEventListener("click", function(e) {
-	document.getElementById("current_msg").className = 'hidden';
+document.getElementById('current_msg').addEventListener('click', function(e) {
+	document.getElementById('current_msg').className = 'hidden';
+	document.getElementById('messages').className = 'hidden';
 });
 GuiMessage = {
 	show: function(title, body, class_name) {
-		var el = document.getElementById("current_msg");
-		el.innerHTML = '<div class="msg_title">'+ title +'</div><div class="msg_body">'+ body +'</div>';
-		el.className = class_name;
+		var msg = document.getElementById("current_msg");
+		var container = document.getElementById('messages')
+		msg.innerHTML = '<div class="msg_title">'+ title +'</div><div class="msg_body">'+ body +'</div>';
+		msg.className = class_name;
+		container.className = '';
 	},
 	warn: function(title, body) {
 		GuiMessage.show(title, body, 'warning');

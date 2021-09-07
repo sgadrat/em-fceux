@@ -90,6 +90,9 @@ html, body {
   height: 100%;
   overflow: hidden;
 }
+div.hidden {
+  display: none;
+}
 
 .emscripten {
   padding-right: 0;
@@ -137,9 +140,6 @@ canvas.emscripten {
   background-color: #af2121e8;
   color:black;
   border: #58080d solid;
-}
-#messages div.hidden {
-  display: none;
 }
 #messages div .msg_title {
   font-weight: bold;
