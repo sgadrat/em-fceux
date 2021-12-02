@@ -35,7 +35,7 @@
 #define UDBG(...)
 #endif
 
-#define MAPPER_VERSION			0b00100001
+#define MAPPER_VERSION			0b01000010
 
 #define MIRR_VERTICAL			0b00 // VRAM
 #define MIRR_HORIZONTAL			0b01 // VRAM
@@ -409,7 +409,7 @@ static void ClockRainbow13Counter(void) {
 	else
 		IRQCount--;
 
-	if ((count | 1) && !IRQCount)
+	if (/*(count | 1) &&*/ !IRQCount) //HACK to be further analyzed, this smells like a bug "count | 1" is never zero (always true)
 	{
 		if (IRQa)
 			X6502_IRQBegin(FCEU_IQEXT);
@@ -723,7 +723,12 @@ static void Rainbow13PPUWrite(uint32 A, uint8 V) {
 			Rainbow13Flash(CHIP_TYPE_CHR, flash_addr, V);
 		}
 	}
-	FFCEUX_PPUWrite_Default(A, V);
+	//FFCEUX_PPUWrite_Default(A, V); //TODO uncomment it
+	// It fails to compile because it is an inline function (while declared in a .h
+	//  It may be a simple error, just remove the "inline" keyword and it works
+	//  but it comes with a "new ppu" comment, em-fceux does not support new ppu (performance reasons they say)
+	// Update: "inline" was a real issue, now fixed. Keeping it commented because the note about new ppu.
+	// TODO investigate if it should be uncommented or completely removed.
 }
 
 static void Rainbow13Power(void) {
@@ -761,19 +766,19 @@ static void Rainbow13Power(void) {
 
 	// fill WRAM/FPGA_WRAM/CHRRAM/DUMMY_CHRRAM/DUMMY_CHRROM with random values
 	if (WRAM)
-		FCEU_MemoryRand(WRAM, WRAMSIZE, false);
+		FCEU_MemoryRand(WRAM, WRAMSIZE);
 
 	if (FPGA_WRAM)
-		FCEU_MemoryRand(FPGA_WRAM, FPGA_WRAMSIZE, false);
+		FCEU_MemoryRand(FPGA_WRAM, FPGA_WRAMSIZE);
 
 	if (CHRRAM)
-		FCEU_MemoryRand(CHRRAM, CHRRAMSIZE, false);
+		FCEU_MemoryRand(CHRRAM, CHRRAMSIZE);
 
 	if (DUMMY_CHRRAM)
-		FCEU_MemoryRand(DUMMY_CHRRAM, DUMMY_CHRRAMSIZE, false);
+		FCEU_MemoryRand(DUMMY_CHRRAM, DUMMY_CHRRAMSIZE);
 
 	if (DUMMY_CHRROM)
-		FCEU_MemoryRand(DUMMY_CHRROM, DUMMY_CHRROMSIZE, false);
+		FCEU_MemoryRand(DUMMY_CHRROM, DUMMY_CHRROMSIZE);
 
 	// ESP firmware
 	esp = new BrokeStudioFirmware;
@@ -1058,7 +1063,7 @@ void RAINBOW13_Init(CartInfo *info) {
 	GameStateRestore = StateRestore;
 
 	// WRAM
-	if (info->wram_size != 0)
+	if (/*info->wram_size != 0*/ true) //HACK info->vram_size does not exists in fceux 2.2.2 (set value according to super tilt bro needs, sorry others)
 	{
 		WRAM = (uint8*)FCEU_gmalloc(WRAMSIZE);
 		SetupCartPRGMapping(0x10, WRAM, WRAMSIZE, 1);
@@ -1099,7 +1104,7 @@ void RAINBOW13_Init(CartInfo *info) {
 	SetupCartPRGMapping(0x11, PRG_FLASHROM, PRG_FLASHROMSIZE, 0);
 
 	// CHR-RAM
-	if (info->vram_size != 0)
+	if (/*info->vram_size != 0*/ true) //HACK info->vram_size does not exists in fceux 2.2.2 (set value according to super tilt bro needs, sorry others)
 	{
 		CHRRAM = (uint8*)FCEU_gmalloc(CHRRAMSIZE);
 		SetupCartCHRMapping(0x11, CHRRAM, CHRRAMSIZE, 1);
