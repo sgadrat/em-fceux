@@ -1,7 +1,7 @@
 /* FCE Ultra - NES/Famicom Emulator
  *
  * Copyright notice for this file:
- *  Copyright (C) 2020 Broke Studio
+ *  Copyright (C) 2021 Broke Studio
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,9 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-// mapper 3871 - Rainbow board by Broke Studio
-//
-// documentation available here: https://github.com/BrokeStudio/rainbow-lib
+ // mapper 3872 - Rainbow board v1.3 by Broke Studio
+ //
+ // documentation available here: https://github.com/BrokeStudio/rainbow-lib
 
 #include "mapinc.h"
 #include "../ines.h"
@@ -35,31 +35,39 @@
 #define UDBG(...)
 #endif
 
-#define MAPPER_VERSION		0b01000000
+#define MAPPER_VERSION			0b00100001
 
-#define MIRR_VERTICAL       0b00 // VRAM
-#define MIRR_HORIZONTAL     0b01 // VRAM
-#define MIRR_ONE_SCREEN     0b10 // VRAM [+ CHR-RAM]
-#define MIRR_FOUR_SCREEN    0b11 // CHR-RAM
+#define MIRR_VERTICAL			0b00 // VRAM
+#define MIRR_HORIZONTAL			0b01 // VRAM
+#define MIRR_ONE_SCREEN			0b10 // VRAM [+ CHR-RAM]
+#define MIRR_FOUR_SCREEN		0b11 // CHR-RAM
 
-#define CHR_TYPE_ROM        0b0  // CHR-ROM
-#define CHR_TYPE_RAM        0b1  // CHR-RAM
+#define CHR_CHIP_ROM			0b0  // CHR-ROM
+#define CHR_CHIP_RAM			0b1  // CHR-RAM
 
-#define CHR_MODE_1K         0b00 // 1K mode
-#define CHR_MODE_2K         0b01 // 2K mode
-#define CHR_MODE_4K         0b10 // 4K mode
-#define CHR_MODE_8K         0b11 // 8K mode
+#define CHR_MODE_1K				0b00 // 1K mode
+#define CHR_MODE_2K				0b01 // 2K mode
+#define CHR_MODE_4K				0b10 // 4K mode
+#define CHR_MODE_8K				0b11 // 8K mode
 
-#define PRG_MODE_16K_8K     0b0 // 16K + 8K + 8K fixed
-#define PRG_MODE_8K_8K_8K   0b1 // 8K + 8K + 8K fixed
+#define PRG_MODE_16K_8K_8K		0b0 // 16K + 8K + 8K fixed
+#define PRG_MODE_8K_8K_8K_8K	0b1 // 8K + 8K + 8K + 8K fixed
 
-static uint8 prg_mode, prg[3], wram_bank;
-static uint16 chr[8];
-static uint8 chr_mode_chip, chr_mode, chr_upper_bank;
+#define CHIP_TYPE_PRG			0
+#define CHIP_TYPE_CHR			1
+
+static uint8 prg_mode, bootloader;
+static uint32 prg[3], wram_bank, fpga_wram_bank;
+static uint32 chr[8];
+static uint8 chr_chip, chr_mode, chr_upper_bank;
 static uint8 mirr_mode, nt_set;
+static uint8 mul_a, mul_b, mul_result;
 
 static uint8 *WRAM = NULL;
 const uint32 WRAMSIZE = 32 * 1024;
+
+static uint8 *FPGA_WRAM = NULL;
+const uint32 FPGA_WRAMSIZE = 9 * 1024;
 
 static uint8 *DUMMY_CHRRAM = NULL;
 const uint32 DUMMY_CHRRAMSIZE = 4 * 1024;
@@ -93,7 +101,7 @@ static SFORMAT FlashRegs[] =
 	{ 0 }
 };
 
-static SFORMAT RainbowStateRegs[] =
+static SFORMAT Rainbow13StateRegs[] =
 {
 	{ prg, 3, "PRG" },
 	{ chr, 8, "CHR" },
@@ -118,12 +126,6 @@ static SFORMAT SStateRegs[] =
 	{ 0 }
 };
 
-enum CHIP_TYPE
-{
-	prg_chip = 0,
-	chr_chip
-};
-
 // ESP interface
 
 static EspFirmware *esp = NULL;
@@ -131,7 +133,7 @@ static bool esp_enable;
 static bool irq_enable;
 static uint8 last_byte_read;
 
-static void RainbowEspMapIrq(int32) {
+static void Rainbow13EspMapIrq(int32) {
 	if (irq_enable)
 	{
 		if (esp->getGpio4())
@@ -153,7 +155,8 @@ static void Sync(void) {
 	uint32 offset;
 	uint8 cart_chr_map;
 
-	if (prg_mode == PRG_MODE_16K_8K)
+	// $8000-$dfff
+	if (prg_mode == PRG_MODE_16K_8K_8K)
 	{
 		if (prg[0] & 0x80)
 		{
@@ -169,7 +172,8 @@ static void Sync(void) {
 			setprg8r(0x11, 0xc000, prg[2] & 0x3f);
 	}
 
-	if (prg_mode == PRG_MODE_8K_8K_8K)
+	// $8000-$dfff
+	if (prg_mode == PRG_MODE_8K_8K_8K_8K)
 	{
 		if (prg[0] & 0x80)
 			setprg8r(0x10, 0x8000, prg[0] & 0x03);
@@ -187,14 +191,34 @@ static void Sync(void) {
 			setprg8r(0x11, 0xc000, prg[2] & 0x3f);
 	}
 
+	// $e000-$ffff
 	setprg8r(0x11, 0xe000, ~0);
 
-	if (wram_bank & 0x80)
-		setprg8r(0x10, 0x6000, wram_bank & 0x03);
-	else
-		setprg8r(0x11, 0x6000, wram_bank & 0x7f);
+	// $6000-$7fff
+	if (WRAM)
+	{
+		switch (wram_bank & 0xC0)
+		{
+		case 0x00:
+			setprg8r(0x10, 0x6000, wram_bank & 0x03);
+			break;
+		case 0x40:
+			setprg8r(0x12, 0x6000, 0x00);
+			break;
+		case 0x80:
+		case 0x81:
+			setprg8r(0x11, 0x6000, wram_bank & 0x7f);
+			break;
+		}
+	}
 
-	cart_chr_map = chr_mode_chip + 0x10;
+	// $5000-$5fff
+	if (bootloader == 1)
+		setprg4r(0x11, 0x5000, 125);
+	else
+		setprg4r(0x12, 0x5000, fpga_wram_bank & 0x01);
+
+	cart_chr_map = chr_chip + 0x10;
 	switch (chr_mode)
 	{
 	case CHR_MODE_1K:
@@ -261,37 +285,37 @@ static void Sync(void) {
 	}
 }
 
-static DECLFW(RainbowSW) {
-	if (A >= 0x5800 && A <= 0x5802)
+static DECLFW(Rainbow13SW) {
+	if (A >= 0x4150 && A <= 0x4152)
 	{
 		vpsg1[A & 3] = V;
 		if (sfun[0])
 			sfun[0]();
 	}
-	else if (A >= 0x5803 && A <= 0x5805)
+	else if (A >= 0x4153 && A <= 0x4155)
 	{
 		vpsg1[4 | ((A - 3) & 3)] = V;
 		if (sfun[1])
 			sfun[1]();
 	}
-	else if (A >= 0x5C00 && A <= 0x5C02)
+	else if (A >= 0x4156 && A <= 0x4158)
 	{
-		vpsg2[A & 3] = V;
+		vpsg2[(A - 6) & 3] = V;
 		if (sfun[2])
 			sfun[2]();
 	}
 }
 
-static DECLFR(RainbowRead) {
+static DECLFR(Rainbow13Read) {
 	switch (A)
 	{
-	case 0x5000:
+	case 0x4100:
 	{
 		if (esp_enable) last_byte_read = esp->tx();
-		else FCEU_printf("RAINBOW warning: $5001.0 is not set\n");
+		else FCEU_printf("RAINBOW warning: $4101.0 is not set\n");
 		return last_byte_read;
 	}
-	case 0x5001:
+	case 0x4101:
 	{
 		uint8 esp_rts_flag = esp->getGpio4() ? 0x80 : 0x00;
 		uint8 esp_enable_flag = esp_enable ? 0x01 : 0x00;
@@ -299,66 +323,83 @@ static DECLFR(RainbowRead) {
 		UDBG("RAINBOW read flags %04x => %02x\n", A, esp_rts_flag | esp_enable_flag | irq_enable_flag);
 		return esp_rts_flag | esp_enable_flag | irq_enable_flag;
 	}
-	case 0x5006:
-		return (nt_set << 6) | (mirr_mode << 4) | (chr_mode_chip << 3) | (chr_mode << 1) | prg_mode;
-	case 0x5C03:
-		return MAPPER_VERSION;
+	case 0x4110: return (nt_set << 6) | (mirr_mode << 4) | (chr_chip << 3) | (chr_mode << 1) | prg_mode;
+	case 0x4113: return MAPPER_VERSION;
+	case 0x4160: return (mul_result >> 8) & 0xff;
+	case 0x4161: return mul_result & 0xff;
 	default:
 		return 0;
 	}
 }
 
-static DECLFW(RainbowWrite) {
+static DECLFW(Rainbow13Write) {
 	switch (A)
 	{
-	case 0x5000:
-		if(esp_enable) esp->rx(V);
-		else FCEU_printf("RAINBOW warning: $5001.0 is not set\n");
+	case 0x4100:
+		if (esp_enable) esp->rx(V);
+		else FCEU_printf("RAINBOW warning: $4101.0 is not set\n");
 		break;
-	case 0x5001:
+	case 0x4101:
 		esp_enable = V & 0x01;
 		irq_enable = V & 0x40;
 		break;
-	case 0x5002: prg[0] = V; Sync(); break;
-	case 0x5003: prg[1] = V & 0x3f; Sync(); break;
-	case 0x5004: prg[2] = V & 0x3f; Sync(); break;
-	case 0x5005: wram_bank = V; Sync(); break;
-	case 0x5006:
+	case 0x4120: prg[0] = V; Sync(); break;
+	case 0x4121: prg[1] = V & 0x3f; Sync(); break;
+	case 0x4122: prg[2] = V & 0x3f; Sync(); break;
+	case 0x4123: fpga_wram_bank = V & 0x01; Sync(); break;
+	case 0x4124: wram_bank = V; Sync(); break;
+	case 0x4110:
 		prg_mode = V & 0x01;
-		chr_mode_chip = (V & 0x08) >> 3;
+		chr_chip = (V & 0x08) >> 3;
 		chr_mode = (V & 0x06) >> 1;
 		mirr_mode = (V & 0x30) >> 4;
 		nt_set = (V & 0xC0) >> 6;
 		Sync();
 		break;
-	case 0x5007: chr_upper_bank = V & 0x01; Sync(); break;
-	case 0x5400:
-	case 0x5401:
-	case 0x5402:
-	case 0x5403:
-	case 0x5404:
-	case 0x5405:
-	case 0x5406:
-	case 0x5407:
+	case 0x4130:
+	case 0x4131:
+	case 0x4132:
+	case 0x4133:
+	case 0x4134:
+	case 0x4135:
+	case 0x4136:
+	case 0x4137:
 	{
 		int bank = A & 0x07;
-		chr[bank] = V | (chr_mode == CHR_MODE_1K ? chr_upper_bank << 8 : chr[bank] & 0x100);
+		chr[bank] = ( chr[bank] & 0x100 ) | ( V & 0xff );
 		Sync();
 		break;
 	}
-	case 0x5C04: IRQLatch = V; break;
-	case 0x5C05: IRQReload = 1; break;
-	case 0x5C06:
+	case 0x4138: chr_upper_bank = V & 0x01; Sync(); break;
+
+	case 0x4170:
+	case 0x4171:
+	case 0x4172:
+	case 0x4173:
+	case 0x4174:
+	case 0x4175:
+	case 0x4176:
+	case 0x4177:
+	{
+		int bank = A & 0x07;
+		chr[bank] = ( chr[bank] & 0xff ) | ( ( V & 0x01 ) << 8 );
+		Sync();
+		break;
+	}
+
+	case 0x4140: IRQLatch = V; break;
+	case 0x4141: IRQReload = 1; break;
+	case 0x4142:
 		X6502_IRQEnd(FCEU_IQEXT);
 		IRQa = 0;
 		break;
-	case 0x5C07:
-		IRQa = 1;
-		break;
+	case 0x4143: IRQa = 1; break;
+	case 0x4160: mul_a = V; mul_result = mul_a * mul_b; break;
+	case 0x4161: mul_b = V; mul_result = mul_a * mul_b; break;
 	}
 }
 
-static void ClockRainbowCounter(void) {
+static void ClockRainbow13Counter(void) {
 	int count = IRQCount;
 	if (!count || IRQReload)
 	{
@@ -368,27 +409,27 @@ static void ClockRainbowCounter(void) {
 	else
 		IRQCount--;
 
-	if (/*(count | 1) &&*/ !IRQCount) //HACK to be further analyzed, this smells like a bug "count | 1" is never zero (always true)
+	if ((count | 1) && !IRQCount)
 	{
 		if (IRQa)
 			X6502_IRQBegin(FCEU_IQEXT);
 	}
 }
 
-static void Rainbowhb() {
-	ClockRainbowCounter();
+static void Rainbow13hb() {
+	ClockRainbow13Counter();
 }
 
-uint8 FASTCALL RainbowPPURead(uint32 A) {
+uint8 FASTCALL Rainbow13PPURead(uint32 A) {
 	// if CHR-RAM, check if CHR-RAM exists, if not return data bus cache
-	if (chr_mode_chip == CHR_TYPE_RAM && CHRRAM == NULL)
+	if (chr_chip == CHR_CHIP_RAM && CHRRAM == NULL)
 	{
 		if (PPU_hook) PPU_hook(A);
 		return X.DB;
 	}
 
 	// if CHR-ROM, check if CHR-ROM exists, if not return data bus cache
-	if (chr_mode_chip == CHR_TYPE_ROM && CHR_FLASHROM == NULL)
+	if (chr_chip == CHR_CHIP_ROM && CHR_FLASHROM == NULL)
 	{
 		if (PPU_hook) PPU_hook(A);
 		return X.DB;
@@ -397,7 +438,7 @@ uint8 FASTCALL RainbowPPURead(uint32 A) {
 	return FFCEUX_PPURead_Default(A);
 }
 
-uint8 RainbowFlashID(uint32 A) {
+uint8 Rainbow13FlashID(uint8 chip, uint32 A) {
 	// Software ID mode is undefined by the datasheet for all but the lowest 2 addressable bytes,
 	// but some tests of the chip currently being used found it repeats in 512-byte patterns.
 	// http://forums.nesdev.com/viewtopic.php?p=178728#p178728
@@ -406,63 +447,89 @@ uint8 RainbowFlashID(uint32 A) {
 	switch (aid)
 	{
 	case 0:  return 0xBF;
-	case 1:  return 0xB7;
+	case 1:
+	{
+		switch (chip)
+		{
+		case CHIP_TYPE_PRG:
+			switch (ROM_size * 16)
+			{
+			case 128: return 0xB5;
+			case 256: return 0xB6;
+			case 512: return 0xB7;
+			default: return 0xFF;
+			}
+		case CHIP_TYPE_CHR:
+			switch (VROM_size * 8)
+			{
+			case 128: return 0xB5;
+			case 256: return 0xB6;
+			case 512: return 0xB7;
+			default: return 0xFF;
+			}
+		}
+	}
 	default: return 0xFF;
 	}
 }
 
-uint8 FASTCALL RainbowFlashChrID(uint32 A) {
-	return RainbowFlashID(A);
+uint8 FASTCALL Rainbow13FlashChrID(uint32 A) {
+	return Rainbow13FlashID(CHIP_TYPE_CHR, A);
 }
 
-static DECLFR(RainbowFlashPrgID)
+static DECLFR(Rainbow13FlashPrgID)
 {
-	return RainbowFlashID(A);
+	return Rainbow13FlashID(CHIP_TYPE_PRG, A);
 }
 
-void RainbowFlashIDEnter(CHIP_TYPE chip)
+void Rainbow13FlashIDEnter(uint8 chip)
 {
 	switch (chip)
 	{
-	case CHIP_TYPE::prg_chip:
+	case CHIP_TYPE_PRG:
 		if (flash_id[chip])
 			return;
 		flash_id[chip] = 1;
-		SetReadHandler(0x8000, 0xFFFF, RainbowFlashPrgID);
+		if(bootloader)
+			SetReadHandler(0x8000, 0xDFFF, Rainbow13FlashPrgID);
+		else
+			SetReadHandler(0x8000, 0xFFFF, Rainbow13FlashPrgID);
 		break;
-	case CHIP_TYPE::chr_chip:
+	case CHIP_TYPE_CHR:
+		if (CHR_FLASHROM == NULL)
+			return;
 		if (flash_id[chip])
 			return;
 		flash_id[chip] = 1;
-		FFCEUX_PPURead = RainbowFlashChrID;
+		FFCEUX_PPURead = Rainbow13FlashChrID;
 		break;
 	default:
 		return;
 	}
 }
 
-void RainbowFlashIDExit(CHIP_TYPE chip)
+void Rainbow13FlashIDExit(uint8 chip)
 {
 	switch (chip)
 	{
-	case CHIP_TYPE::prg_chip:
+	case CHIP_TYPE_PRG:
 		if (!flash_id[chip])
 			return;
 		flash_id[chip] = 0;
 		SetReadHandler(0x8000, 0xFFFF, CartBR);
 		break;
-	case CHIP_TYPE::chr_chip:
+	case CHIP_TYPE_CHR:
 		if (!flash_id[chip])
 			return;
 		flash_id[chip] = 0;
-		FFCEUX_PPURead = RainbowPPURead;
+		FFCEUX_PPURead = Rainbow13PPURead;
 		break;
 	default:
 		return;
 	}
 }
 
-void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
+void Rainbow13Flash(uint8 chip, uint32 flash_addr, uint8 V) {
 
 	uint32 command_addr = flash_addr & 0x7FFF;
 
@@ -485,7 +552,7 @@ void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
 		}
 		else if (V == 0xF0)
 		{
-			RainbowFlashIDExit(chip);
+			Rainbow13FlashIDExit(chip);
 		}
 		break;
 	case flash_mode_COMMAND:
@@ -510,8 +577,8 @@ void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
 				default:   flash_mode[chip] = flash_mode_READY; break;
 				case 0xA0: flash_mode[chip] = flash_mode_BYTE_WRITE; break;
 				case 0x80: flash_mode[chip] = flash_mode_ERASE; break;
-				case 0x90: RainbowFlashIDEnter(chip); flash_mode[chip] = flash_mode_READY; break;
-				case 0xF0: RainbowFlashIDExit(chip); flash_mode[chip] = flash_mode_READY; break;
+				case 0x90: Rainbow13FlashIDEnter(chip); flash_mode[chip] = flash_mode_READY; break;
+				case 0xF0: Rainbow13FlashIDExit(chip); flash_mode[chip] = flash_mode_READY; break;
 				}
 			}
 			else
@@ -521,11 +588,11 @@ void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
 			flash_mode[chip] = flash_mode_READY; // should be unreachable
 		break;
 	case flash_mode_BYTE_WRITE:
-		if (chip == CHIP_TYPE::prg_chip)
+		if (chip == CHIP_TYPE_PRG)
 		{
 			PRG_FLASHROM[flash_addr] &= V;
 		}
-		else if (chip == CHIP_TYPE::chr_chip)
+		else if (chip == CHIP_TYPE_CHR)
 		{
 			CHR_FLASHROM[flash_addr] &= V;
 		}
@@ -550,11 +617,11 @@ void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
 		{
 			if (command_addr == 0x5555 && V == 0x10) // erase chip
 			{
-				if (chip == CHIP_TYPE::prg_chip)
+				if (chip == CHIP_TYPE_PRG)
 				{
 					memset(PRG_FLASHROM, 0xFF, PRG_FLASHROMSIZE);
 				}
-				else if (chip == CHIP_TYPE::chr_chip)
+				else if (chip == CHIP_TYPE_CHR)
 				{
 					memset(CHR_FLASHROM, 0xFF, CHR_FLASHROMSIZE);
 				}
@@ -562,11 +629,11 @@ void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
 			else if (V == 0x30) // erase 4k sector
 			{
 				uint32 sector = flash_addr & 0x7F000;
-				if (chip == CHIP_TYPE::prg_chip)
+				if (chip == CHIP_TYPE_PRG)
 				{
 					memset(PRG_FLASHROM + sector, 0xFF, 1024 * 4);
 				}
-				else if (chip == CHIP_TYPE::chr_chip)
+				else if (chip == CHIP_TYPE_CHR)
 				{
 					memset(CHR_FLASHROM + sector, 0xFF, 1024 * 4);
 				}
@@ -579,14 +646,14 @@ void RainbowFlash(CHIP_TYPE chip, uint32 flash_addr, uint8 V) {
 	}
 }
 
-static DECLFW(RainbowPrgFlash) {
+static DECLFW(Rainbow13PrgFlash) {
 	if (A < 0x8000 || A > 0xFFFF)
 		return;
 
 	uint32 flash_addr = A;
 	switch (prg_mode)
 	{
-	case PRG_MODE_8K_8K_8K:
+	case PRG_MODE_8K_8K_8K_8K:
 		flash_addr &= 0x1FFF;
 		if ((A >= 0x8000) & (A <= 0x9FFF))
 		{
@@ -601,7 +668,7 @@ static DECLFW(RainbowPrgFlash) {
 			flash_addr |= (prg[2] & 0x3F) << 13;
 		}
 		break;
-	case PRG_MODE_16K_8K:
+	case PRG_MODE_16K_8K_8K:
 		if ((A >= 0x8000) & (A <= 0xBFFF))
 		{
 			flash_addr &= 0x3FFF;
@@ -616,17 +683,17 @@ static DECLFW(RainbowPrgFlash) {
 	default:
 		return;
 	}
-	RainbowFlash(CHIP_TYPE::prg_chip, flash_addr, V);
+	Rainbow13Flash(CHIP_TYPE_PRG, flash_addr, V);
 }
 
-static void RainbowPPUWrite(uint32 A, uint8 V) {
+static void Rainbow13PPUWrite(uint32 A, uint8 V) {
 
 	// if CHR-RAM, check if CHR-RAM exists, if not return
-	if (chr_mode_chip == CHR_TYPE_RAM && CHRRAM == NULL)
+	if (chr_chip == CHR_CHIP_RAM && CHRRAM == NULL)
 		return;
 
 	// if CHR-ROM, check if CHR-ROM exists, if not return
-	if (chr_mode_chip == CHR_TYPE_ROM && CHR_FLASHROM == NULL)
+	if (chr_chip == CHR_CHIP_ROM && CHR_FLASHROM == NULL)
 		return;
 	else
 	{
@@ -653,63 +720,60 @@ static void RainbowPPUWrite(uint32 A, uint8 V) {
 				flash_addr |= (chr[0] & 0xff) << 13;
 				break;
 			}
-			RainbowFlash(CHIP_TYPE::chr_chip, flash_addr, V);
+			Rainbow13Flash(CHIP_TYPE_CHR, flash_addr, V);
 		}
 	}
-	//FFCEUX_PPUWrite_Default(A, V); //TODO uncomment it
-	// It fails to compile because it is an inline function (while declared in a .h
-	//  It may be a simple error, just remove the "inline" keywork and it works
-	//  but it comes with a "new ppu" comment, em-fceux does not support new ppu (performance reasons they say)
-	// Update: "inline" was a real issue, now fixed. Keeping it commented because the note about new ppu.
-	// TODO investigate if it should be uncommented or completely removed.
+	FFCEUX_PPUWrite_Default(A, V);
 }
 
-static void RainbowPower(void) {
+static void Rainbow13Power(void) {
 
 	// mapper
 	IRQCount = IRQLatch = IRQa = 0;
 	chr_mode &= 0x03;
 	prg_mode &= 0x01;
 	chr_upper_bank &= 0x01;
+	bootloader = 0x01;
 	Sync();
-	SetReadHandler(0x6000, 0xFFFF, CartBR);
-	SetWriteHandler(0x6000, 0x7FFF, CartBW);
-	FCEU_CheatAddRAM(WRAMSIZE >> 10, 0x6000, WRAM);
+	SetReadHandler(0x4800, 0xFFFF, CartBR);
+	SetWriteHandler(0x4800, 0x7FFF, CartBW);
+	if (WRAM)
+		FCEU_CheatAddRAM(WRAMSIZE >> 10, 0x6000, WRAM);
+	FCEU_CheatAddRAM(FPGA_WRAMSIZE >> 10, 0x5000, FPGA_WRAM);
 
 	// mapper registers (writes)
-	SetWriteHandler(0x5000, 0x5007, RainbowWrite);
-	SetWriteHandler(0x5400, 0x5407, RainbowWrite);
-	SetWriteHandler(0x5806, 0x5807, RainbowWrite);
-	SetWriteHandler(0x5C04, 0x5C07, RainbowWrite);
-
-	// audio expansion registers (writes)
-	SetWriteHandler(0x5800, 0x5805, RainbowSW);
-	SetWriteHandler(0x5C00, 0x5C02, RainbowSW);
+	SetWriteHandler(0x4100, 0x4177, Rainbow13Write); //0x4161
 
 	// mapper registers (reads)
-	SetReadHandler(0x5000, 0x5C07, RainbowRead);
+	SetReadHandler(0x4100, 0x4161, Rainbow13Read);
+
+	// audio expansion registers (writes)
+	SetWriteHandler(0x4150, 0x4158, Rainbow13SW);
 
 	// self-flashing
-	flash_mode[CHIP_TYPE::prg_chip] = 0;
-	flash_mode[CHIP_TYPE::chr_chip] = 0;
-	flash_sequence[CHIP_TYPE::prg_chip] = 0;
-	flash_sequence[CHIP_TYPE::chr_chip] = 0;
-	flash_id[CHIP_TYPE::prg_chip] = false;
-	flash_id[CHIP_TYPE::chr_chip] = false;
-	SetWriteHandler(0x8000, 0xFFFF, RainbowPrgFlash);
+	flash_mode[CHIP_TYPE_PRG] = 0;
+	flash_mode[CHIP_TYPE_CHR] = 0;
+	flash_sequence[CHIP_TYPE_PRG] = 0;
+	flash_sequence[CHIP_TYPE_CHR] = 0;
+	flash_id[CHIP_TYPE_PRG] = false;
+	flash_id[CHIP_TYPE_CHR] = false;
+	SetWriteHandler(0x8000, 0xFFFF, Rainbow13PrgFlash);
 
-	// fill WRAM/CHRRAM/DUMMY_CHRRAM/DUMMY_CHRROM with random values
-	if(WRAM)
-		FCEU_MemoryRand(WRAM, WRAMSIZE);
+	// fill WRAM/FPGA_WRAM/CHRRAM/DUMMY_CHRRAM/DUMMY_CHRROM with random values
+	if (WRAM)
+		FCEU_MemoryRand(WRAM, WRAMSIZE, false);
 
-	if(CHRRAM)
-		FCEU_MemoryRand(CHRRAM, CHRRAMSIZE);
+	if (FPGA_WRAM)
+		FCEU_MemoryRand(FPGA_WRAM, FPGA_WRAMSIZE, false);
 
-	if(DUMMY_CHRRAM)
-		FCEU_MemoryRand(DUMMY_CHRRAM, DUMMY_CHRRAMSIZE);
+	if (CHRRAM)
+		FCEU_MemoryRand(CHRRAM, CHRRAMSIZE, false);
+
+	if (DUMMY_CHRRAM)
+		FCEU_MemoryRand(DUMMY_CHRRAM, DUMMY_CHRRAMSIZE, false);
 
 	if (DUMMY_CHRROM)
-		FCEU_MemoryRand(DUMMY_CHRROM, DUMMY_CHRROMSIZE);
+		FCEU_MemoryRand(DUMMY_CHRROM, DUMMY_CHRROMSIZE, false);
 
 	// ESP firmware
 	esp = new BrokeStudioFirmware;
@@ -718,12 +782,18 @@ static void RainbowPower(void) {
 	last_byte_read = 0x00;
 }
 
-static void RainbowClose(void)
+static void Rainbow13Close(void)
 {
 	if (WRAM)
 	{
 		FCEU_gfree(WRAM);
 		WRAM = NULL;
+	}
+
+	if (FPGA_WRAM)
+	{
+		FCEU_gfree(FPGA_WRAM);
+		FPGA_WRAM = NULL;
 	}
 
 	if (CHRRAM)
@@ -733,6 +803,7 @@ static void RainbowClose(void)
 	{
 		FCEU_gfree(DUMMY_CHRRAM);
 		DUMMY_CHRRAM = NULL;
+		ExtraNTARAM = NULL;
 	}
 
 	if (PRG_FLASHROM)
@@ -832,7 +903,7 @@ static void DoSawV(void) {
 			if (saw1phaseacc <= 0)
 			{
 				int32 t;
-rea:
+			rea:
 				t = freq3;
 				t <<= 18;
 				saw1phaseacc += t;
@@ -914,7 +985,7 @@ static void DoSawVHQ(void) {
 	cvbc[2] = SOUNDTS;
 }
 
-void RainbowSound(int Count) {
+void Rainbow13Sound(int Count) {
 	int x;
 
 	DoSQV1();
@@ -924,22 +995,22 @@ void RainbowSound(int Count) {
 		cvbc[x] = Count;
 }
 
-void RainbowSoundHQ(void) {
+void Rainbow13SoundHQ(void) {
 	DoSQV1HQ();
 	DoSQV2HQ();
 	DoSawVHQ();
 }
 
-void RainbowSyncHQ(int32 ts) {
+void Rainbow13SyncHQ(int32 ts) {
 	int x;
 	for (x = 0; x < 3; x++) cvbc[x] = ts;
 }
 
-static void RainbowESI(void) {
-	GameExpSound.RChange = RainbowESI;
-	GameExpSound.Fill = RainbowSound;
-	GameExpSound.HiFill = RainbowSoundHQ;
-	GameExpSound.HiSync = RainbowSyncHQ;
+static void Rainbow13ESI(void) {
+	GameExpSound.RChange = Rainbow13ESI;
+	GameExpSound.Fill = Rainbow13Sound;
+	GameExpSound.HiFill = Rainbow13SoundHQ;
+	GameExpSound.HiSync = Rainbow13SyncHQ;
 
 	memset(cvbc, 0, sizeof(cvbc));
 	memset(vcount, 0, sizeof(vcount));
@@ -969,25 +1040,25 @@ static void RainbowESI(void) {
 
 // NSF Init
 
-void NSFRainbow_Init(void) {
-	RainbowESI();
-	SetWriteHandler(0x8000, 0xbfff, RainbowSW);
+void NSFRainbow13_Init(void) {
+	Rainbow13ESI();
+	SetWriteHandler(0x8000, 0xbfff, Rainbow13SW);
 }
 #endif
 
 // mapper init
 
-void RAINBOW_Init(CartInfo *info) {
+void RAINBOW13_Init(CartInfo *info) {
 	int save_game_index = 0;
-	info->Power = RainbowPower;
-	info->Close = RainbowClose;
+	info->Power = Rainbow13Power;
+	info->Close = Rainbow13Close;
 
-	GameHBIRQHook = Rainbowhb;
-	RainbowESI();
+	GameHBIRQHook = Rainbow13hb;
+	Rainbow13ESI();
 	GameStateRestore = StateRestore;
 
 	// WRAM
-	if (/*info->wram_size != 0*/ true) //HACK info->vram_size does not exists in fceux 2.2.2 (set value according to super tilt bro needs, sorry others)
+	if (info->wram_size != 0)
 	{
 		WRAM = (uint8*)FCEU_gmalloc(WRAMSIZE);
 		SetupCartPRGMapping(0x10, WRAM, WRAMSIZE, 1);
@@ -999,8 +1070,12 @@ void RAINBOW_Init(CartInfo *info) {
 			info->SaveGameLen[save_game_index] = WRAMSIZE;
 			save_game_index++;
 		}
-
 	}
+
+	// FPGA_WRAM
+	FPGA_WRAM = (uint8*)FCEU_gmalloc(FPGA_WRAMSIZE);
+	SetupCartPRGMapping(0x12, FPGA_WRAM, FPGA_WRAMSIZE, 1);
+	AddExState(FPGA_WRAM, FPGA_WRAMSIZE, 0, "FPGA_WRAM");
 
 	// PRG FLASH ROM
 	PRG_FLASHROM = (uint8*)FCEU_gmalloc(PRG_FLASHROMSIZE);
@@ -1024,7 +1099,7 @@ void RAINBOW_Init(CartInfo *info) {
 	SetupCartPRGMapping(0x11, PRG_FLASHROM, PRG_FLASHROMSIZE, 0);
 
 	// CHR-RAM
-	if (/*info->vram_size != 0*/ true) //HACK info->vram_size does not exists in fceux 2.2.2 (set value according to super tilt bro needs, sorry others)
+	if (info->vram_size != 0)
 	{
 		CHRRAM = (uint8*)FCEU_gmalloc(CHRRAMSIZE);
 		SetupCartCHRMapping(0x11, CHRRAM, CHRRAMSIZE, 1);
@@ -1064,8 +1139,8 @@ void RAINBOW_Init(CartInfo *info) {
 		}
 		SetupCartCHRMapping(0x10, CHR_FLASHROM, CHR_FLASHROMSIZE, 0);
 
-		FFCEUX_PPUWrite = RainbowPPUWrite;
-		FFCEUX_PPURead = RainbowPPURead;
+		FFCEUX_PPUWrite = Rainbow13PPUWrite;
+		FFCEUX_PPURead = Rainbow13PPURead;
 	}
 	else
 	{
@@ -1076,8 +1151,8 @@ void RAINBOW_Init(CartInfo *info) {
 	}
 
 	AddExState(&FlashRegs, ~0, 0, 0);
-	AddExState(&RainbowStateRegs, ~0, 0, 0);
+	AddExState(&Rainbow13StateRegs, ~0, 0, 0);
 
 	// set a hook on hblank to be able periodically check if we have to send an interupt
-	MapIRQHook = RainbowEspMapIrq;
+	MapIRQHook = Rainbow13EspMapIrq;
 }

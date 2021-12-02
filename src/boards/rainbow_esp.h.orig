@@ -6,7 +6,6 @@
 #include <array>
 #include <atomic>
 #include <deque>
-#include <string>
 #include <thread>
 
 #include "esp.h"
@@ -49,17 +48,8 @@ private:
 		DEBUG_LOG,
 		BUFFER_CLEAR_RX_TX,
 		BUFFER_DROP_FROM_ESP,
-		ESP_GET_FIRMWARE_VERSION,
-		ESP_RESTART,
-
-		// WIFI CMDS
 		WIFI_GET_STATUS,
-		WIFI_GET_SSID,
-		WIFI_GET_IP,
-
-		// AP CMDS
-		AP_GET_SSID,
-		AP_GET_IP,
+		ESP_RESTART,
 
 		// RND CMDS
 		RND_GET_BYTE,
@@ -90,7 +80,6 @@ private:
 		// FILE CMDS
 		FILE_OPEN,
 		FILE_CLOSE,
-		FILE_STATUS,
 		FILE_EXISTS,
 		FILE_DELETE,
 		FILE_SET_CUR,
@@ -110,12 +99,7 @@ private:
 		// ESP CMDS
 		READY,
 		DEBUG_LEVEL,
-		ESP_FIRMWARE_VERSION,
-
-		// WIFI / AP CMDS
 		WIFI_STATUS,
-		SSID,
-		IP_ADDRESS,
 
 		// RND CMDS
 		RND_BYTE,
@@ -134,7 +118,6 @@ private:
 		NETWORK_REGISTERED,
 
 		// FILE CMDS
-		FILE_STATUS,
 		FILE_EXISTS,
 		FILE_DELETE,
 		FILE_LIST,
@@ -153,42 +136,22 @@ private:
 		UDP,
 	};
 
-	// FILE_CONFIG
-	enum class file_config_flags_t : uint8 {
-		ACCESS_MODE = 1,
-		AUTO_ACCESS_MODE = 0,
-		MANUAL_ACCESS_MODE = 1
-	};
-
-	enum class file_delete_results_t : uint8 {
+	enum class file_delete_results_t : uint8
+	{
 		SUCCESS,
 		ERROR_WHILE_DELETING_FILE,
 		FILE_NOT_FOUND,
 		INVALID_PATH_OR_FILE,
 	};
 
-	enum class file_download_results_t : uint8 {
+	enum class file_download_results_t : uint8
+	{
 		SUCCESS,
-		INVALID_DESTINATION,
 		ERROR_WHILE_DELETING_FILE,
-		UNKNOWN_OR_UNSUPPORTED_PROTOCOL,
-		NETWORK_ERROR,
-		HTTP_STATUS_NOT_IN_2XX,
+		DOWNLOAD_FAILED,
+		INVALID_PATH_OR_FILE,
 	};
 
-	enum class file_download_network_error_t : uint8 {
-		CONNECTION_FAILED = 255,
-		SEND_HEADER_FAILED = 254,
-		SEND_PAYLOAD_FILED = 253,
-		NOT_CONNECTED = 252,
-		CONNECTION_LOST = 251,
-		NO_STREAM = 250,
-		NO_HTTP_SERVER = 249,
-		OUT_OF_RAM = 248,
-		ENCODING = 247,
-		STREAM_WRITE = 246,
-		READ_TIMEOUT = 245,
-	};
 
 	void processBufferedMessage();
 	void readFile(uint8 path, uint8 file, uint8 n, uint32 offset);
@@ -209,8 +172,6 @@ private:
 
 	void receivePingResult();
 
-	void downloadFile(std::string const& url, uint8_t path, uint8_t file);
-
 private:
 	std::deque<uint8> rx_buffer;
 	std::deque<uint8> tx_buffer;
@@ -219,7 +180,6 @@ private:
 	std::array<std::array<std::vector<uint8>, NUM_FILES>, NUM_FILE_PATHS> files;
 	std::array<std::array<bool, NUM_FILES>, NUM_FILE_PATHS> file_exists;
 	uint32 file_offset = 0;
-	uint8 working_file_config = 0;
 	uint8 working_path = 0;
 	uint8 working_file = NO_WORKING_FILE;
 
