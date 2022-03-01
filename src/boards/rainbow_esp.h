@@ -36,8 +36,7 @@ public:
 	void rx(uint8 v) override;
 	uint8 tx() override;
 
-	virtual void setGpio4(bool v) override;
-	virtual bool getGpio4() override;
+	virtual bool getDataReadyIO() override;
 
 private:
 	// Defined message types from CPU to ESP
@@ -60,6 +59,8 @@ private:
 		// AP CMDS
 		AP_GET_SSID,
 		AP_GET_IP,
+		AP_GET_CONFIG,
+		AP_SET_CONFIG,
 
 		// RND CMDS
 		RND_GET_BYTE,
@@ -116,6 +117,7 @@ private:
 		WIFI_STATUS,
 		SSID,
 		IP_ADDRESS,
+		AP_CONFIG,
 
 		// RND CMDS
 		RND_BYTE,
@@ -232,6 +234,7 @@ private:
 	uint16_t server_settings_port = 0;
 
 	uint8 debug_config = 0;
+	uint8 ap_config = 3;
 
 	int udp_socket = -1;
 

@@ -103,10 +103,6 @@ uint8 BrokeStudioFirmware::tx() {
 	// Fill buffer with the next message (if needed)
 	if (this->tx_buffer.empty() && !this->tx_messages.empty()) {
 		std::deque<uint8> message = this->tx_messages.front();
-		// add last received byte first to match hardware behavior
-		// it's more of a mapper thing though ...
-		// needs a dummy $5000 read when reading data from buffer
-		this->tx_buffer.push_back(last_byte_read);
 		this->tx_buffer.insert(this->tx_buffer.end(), message.begin(), message.end());
 		this->tx_messages.pop_front();
 	}
@@ -121,10 +117,7 @@ uint8 BrokeStudioFirmware::tx() {
 	return last_byte_read;
 }
 
-void BrokeStudioFirmware::setGpio4(bool /*v*/) {
-}
-
-bool BrokeStudioFirmware::getGpio4() {
+bool BrokeStudioFirmware::getDataReadyIO() {
 	this->receiveDataFromServer();
 	this->receivePingResult();
 	return !(this->tx_buffer.empty() && this->tx_messages.empty());
@@ -225,6 +218,7 @@ void BrokeStudioFirmware::processBufferedMessage() {
 			break;
 
 		// AP CMDS
+		// GET/SET AP config commands are not relevant here, so we'll just use a fake variable
 		case toesp_cmds_t::AP_GET_SSID:
 			UDBG("RAINBOW BrokeStudioFirmware received message AP_GET_SSID\n");
 			this->tx_messages.push_back({ 12, static_cast<uint8>(fromesp_cmds_t::SSID), 10, 'F', 'C', 'E', 'U', 'X', '_', 'S', 'S', 'I', 'D' });
@@ -232,6 +226,14 @@ void BrokeStudioFirmware::processBufferedMessage() {
 		case toesp_cmds_t::AP_GET_IP:
 			UDBG("RAINBOW BrokeStudioFirmware received message AP_GET_ID\n");
 			this->tx_messages.push_back({ 16, static_cast<uint8>(fromesp_cmds_t::IP_ADDRESS), 14, '1', '2', '7', '.', '0', '.', '0', '.', '1', ':', '8', '0', '8', '0' });
+			break;
+		case toesp_cmds_t::AP_GET_CONFIG:
+			UDBG("RAINBOW BrokeStudioFirmware received message AP_GET_CONFIG\n");
+			this->tx_messages.push_back({ 2, static_cast<uint8>(fromesp_cmds_t::AP_CONFIG), this->ap_config });
+			break;
+		case toesp_cmds_t::AP_SET_CONFIG:
+			UDBG("RAINBOW BrokeStudioFirmware received message AP_SET_CONFIG\n");
+			this->ap_config = this->rx_buffer.at(2);
 			break;
 
 		// RND CMDS
