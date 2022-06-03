@@ -32,6 +32,23 @@ showControls : (function(show) {
 		el.checked = (show === undefined) ? !el.checked : show;
 	};
 })(),
+locStorage : (function() {
+	var bestStorage = {
+		getItem: function(item_name) {
+			if (typeof this[item_name] == 'undefined') {
+				return null;
+			}
+			return this[item_name];
+		},
+	};
+	try {
+		let test = localStorage.getItem('ctrlInit'); // This line with throw in Chrome incognito (maybe only when in an i-frame)
+		bestStorage = localStorage;
+	}catch(error) {
+		console.log('local storage unavailable, use dummy storage');
+	}
+	return bestStorage;
+})(),
 toggleSound : (function() {
 	var el = document.getElementById('soundIcon');
 	return function() {
@@ -84,23 +101,23 @@ toggleSound : (function() {
   },
   _getLocalInputDefault : function(id, type) {
     var m = (type ? 'gp' : 'input') + id;
-    if (localStorage[m] === undefined) {
+    if (FCEM.locStorage[m] === undefined) {
       if (FCEC.inputs[id] === undefined) {
-        localStorage[m] = '0'; // NOTE: fallback if the id is undefined
+        FCEM.locStorage[m] = '0'; // NOTE: fallback if the id is undefined
       } else {
-        localStorage[m] = FCEC.inputs[id][type];
+        FCEM.locStorage[m] = FCEC.inputs[id][type];
       }
     }
-    return parseInt(localStorage[m]);
+    return parseInt(FCEM.locStorage[m]);
   },
   setLocalKey : function(id, key) {
-    localStorage['input' + id] = key;
+    FCEM.locStorage['input' + id] = key;
   },
   getLocalKey : function(id) {
     return FCEM._getLocalInputDefault(id, 0);
   },
   setLocalGamepad : function(id, binding) {
-    localStorage['gp' + id] = binding;
+    FCEM.locStorage['gp' + id] = binding;
   },
   getLocalGamepad : function(id) {
     return FCEM._getLocalInputDefault(id, 1);
@@ -108,8 +125,8 @@ toggleSound : (function() {
   clearInputBindings : function() {
     for (var id in FCEC.inputs) {
       // clear local bindings
-      delete localStorage['input' + id];
-      delete localStorage['gp' + id];
+      delete FCEM.locStorage['input' + id];
+      delete FCEM.locStorage['gp' + id];
       // clear host bindings
       var key = FCEM.getLocalKey(id);
       FCEM.bindKey(0, key);
@@ -185,18 +202,18 @@ toggleSound : (function() {
     FCEM.initInputBindings();
   },
   setLocalController : function(id, val) {
-    localStorage['ctrl' + id] = Number(val);
+    FCEM.locStorage['ctrl' + id] = Number(val);
     FCEM.setController(id, val);
   },
   initControllers : function(force) {
-    if (force || !localStorage.getItem('ctrlInit')) {
+    if (force || !FCEM.locStorage.getItem('ctrlInit')) {
       for (var id in FCEC.controllers) {
-        localStorage['ctrl' + id] = FCEC.controllers[id][0];
+        FCEM.locStorage['ctrl' + id] = FCEC.controllers[id][0];
       }
-      localStorage['ctrlInit'] = 'true';
+      FCEM.locStorage['ctrlInit'] = 'true';
     }
     for (var id in FCEC.controllers) {
-      var val = Number(localStorage['ctrl' + id]);
+      var val = Number(FCEM.locStorage['ctrl' + id]);
       FCEM.setController(id, val);
       FCEV.setControllerEl(id, val);
     }
