@@ -90,7 +90,7 @@ if platform.system == "ppc":
 env['LIBS'] = []
 
 # Default compiler flags:
-env.Append(CCFLAGS = ['-Wall', '-Werror', '-Wno-write-strings', '-Wno-sign-compare', '-Wno-unused-local-typedefs'])
+env.Append(CCFLAGS = ['-Wall', '-Werror', '-Wno-write-strings', '-Wno-sign-compare', '-Wno-unused-local-typedefs', '-Wno-deprecated-non-prototype'])
 
 if 'PLATFORM' in os.environ:
   env.Replace(PLATFORM = os.environ['PLATFORM'])
