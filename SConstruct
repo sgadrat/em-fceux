@@ -243,7 +243,7 @@ if env['DEBUG']:
     common += ' -s SAFE_HEAP=1'
     common += ' -s DEMANGLE_SUPPORT=1'
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = common, LINKFLAGS = common)
-    env.Append(LINKFLAGS = '-s ASSERTIONS=2')
+    env.Append(LINKFLAGS = '-s ASSERTIONS=2 -s ALLOW_MEMORY_GROWTH')
   else:
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = ['-g', '-O0'])
 
@@ -258,7 +258,8 @@ if env['RELEASE']:
     #common += ' -s AGGRESSIVE_VARIABLE_ELIMINATION=1' # useless in wasm, removed since https://github.com/emscripten-core/emscripten/commit/27f2e127235d31c8ce65b134033d8dadc43eed4b
     env.Append(CCFLAGS = common)
     env.Append(LINKFLAGS = common)
-    env.Append(LINKFLAGS = '-s ASSERTIONS=0 -strip-all')
+    env.Append(LINKFLAGS = '-s ASSERTIONS=0 -s ALLOW_MEMORY_GROWTH -strip-all')
+    #env.Append(LINKFLAGS = '-s RETAIN_COMPILER_SETTINGS') # To be able to check values at runtime with emscripten_get_compiler_setting()
   else:
     env.Append(CCFLAGS = ['-O2'])
     env.Append(LINKFLAGS = ['-O2'])
