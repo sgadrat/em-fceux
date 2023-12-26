@@ -703,7 +703,7 @@ static BMAPPINGLocal bmap[] = {
 	{"DRAGON BALL PIRATE",	253, Mapper253_Init},
 	{"",					254, Mapper254_Init},
 //	{"",					255, Mapper255_Init},	// No good dumps for this mapper
-	{"RAINBOW2",            682, RAINBOW2_Init },
+	{"RAINBOW",             682, RAINBOW_Init },
 	{"",					0, NULL}
 };
 

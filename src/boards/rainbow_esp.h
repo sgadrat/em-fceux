@@ -65,12 +65,12 @@ struct WorkingFile
 class BrokeStudioFirmware: public EspFirmware {
 public:
 	BrokeStudioFirmware();
-	~BrokeStudioFirmware();
+	virtual ~BrokeStudioFirmware();
 
 	void rx(uint8 v) override;
 	uint8 tx() override;
 
-	virtual bool getDataReadyIO() override;
+	bool getDataReadyIO() override;
 
 private:
 	// Defined message types from CPU to ESP
@@ -118,6 +118,7 @@ private:
 
 		// NETWORK CMDS
 		NETWORK_SCAN,
+		NETWORK_GET_SCAN_RESULT,
 		NETWORK_GET_DETAILS,
 		NETWORK_GET_REGISTERED,
 		NETWORK_GET_REGISTERED_DETAILS,
@@ -169,7 +170,7 @@ private:
 		MESSAGE_FROM_SERVER,
 
 		// NETWORK CMDS
-		NETWORK_COUNT,
+		NETWORK_SCAN_RESULT,
 		NETWORK_SCANNED_DETAILS,
 		NETWORK_REGISTERED_DETAILS,
 		NETWORK_REGISTERED,
@@ -256,6 +257,8 @@ private:
 	void readFile(uint8 n);
 	template<class I>
 	void writeFile(I data_begin, I data_end);
+	template<class I>
+	void appendFile(I data_begin, I data_end);
 	void saveFiles();
 	void saveFile(uint8 drive, char const* filename);
 	void loadFiles();
