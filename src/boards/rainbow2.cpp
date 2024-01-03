@@ -86,12 +86,16 @@ static int RNBWHack = 0;
 static uint8 *RNBWHackExNTARAMPtr = 0;
 static uint8 *RNBWHackVROMPtr = 0;
 static uint32 RNBWHackVROMMask = 0xff;
-static uint8 RNBWHackNTcontrol[4];
+static uint8 RNBWHackNTbank[5];
+static uint8 RNBWHackNTcontrol[5];
 static uint8 RNBWHackBGBankOffset;
 static uint8 RNBWHackCurSprite;
-static uint8 RNBWHackNTbank[5];
-static uint8 *RNBWHackSplitNTARAMPtr;
 static uint8 RNBWHackSplitEnable;
+static uint8 RNBWHackWindowXStartTile;
+static uint8 RNBWHackWindowXEndTile;
+static uint8 RNBWHackSplitXScroll;
+static uint8 RNBWHackSplitYScroll;
+static uint8 *RNBWHackSplitNTARAMPtr;
 
 // hack misc ROMs parsing is added by rainbow patches, but actually not needed for stb
 static uint8* const MiscROMS = NULL;
@@ -880,7 +884,7 @@ static DECLFW(RNBW_0x4100Wr) {
 		SPR_bank[A & 0x3f] = V;
 }
 
-extern uint32 NTRefreshAddr;
+static uint32 NTRefreshAddr = 0;
 uint8 FASTCALL RainbowPPURead(uint32 A) {
 	// Disabled: Window split, we don't need it in Super Tilt Bro, and it requires the new PPU
 #if 0
@@ -901,6 +905,13 @@ uint8 FASTCALL RainbowPPURead(uint32 A) {
 			split = true;
 		}
 	}
+#else
+	int xt = NTRefreshAddr & 31;
+	int yt = (NTRefreshAddr >> 5) & 31;
+	int ntnum = (NTRefreshAddr >> 10) & 3;
+
+	bool split = false;
+	int linetile = 0;
 #endif
 
 	if (A < 0x2000) // pattern table / CHR data

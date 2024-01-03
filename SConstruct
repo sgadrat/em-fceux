@@ -76,6 +76,7 @@ if 'EMSCRIPTEN_TOOL_PATH' in os.environ:
   env.Append(LINKFLAGS = exports)
   exports = '-s EXPORTED_RUNTIME_METHODS=\'["' + '","'.join(runtimeExportsList) + '"]\''
   env.Append(LINKFLAGS = exports)
+  env.Append(LINKFLAGS = '-sINCOMING_MODULE_JS_API=canvas,canvas2D,canvas3D,createContext,ctx,ctx2D,ctx3D,cwrap,dataFileDownloads,dynCall_v,expectedDataFileDownloads,HEAPU8,instantiateWasm,locateFile,locateFilePackage,noAudioDecoding,noImageDecoding,preloadResults,monitorRunDependencies,preRun,postRun,print,printErr,requestFullscreen,romName,romReload,setStatus,totalDependencies,useWebGL')
   env.Append(LINKFLAGS = '--preload-file src/drivers/em/assets/data/@/data/')
 else:
   env['EMSCRIPTEN'] = 0
@@ -244,6 +245,7 @@ if env['DEBUG']:
     common += ' -s DEMANGLE_SUPPORT=1'
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = common, LINKFLAGS = common)
     env.Append(LINKFLAGS = '-s ASSERTIONS=2 -s ALLOW_MEMORY_GROWTH')
+    env.Append(CCFLAGS = ['-Wno-unused-command-line-argument']) # SAFE_HEAP=1 causes this warning
   else:
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = ['-g', '-O0'])
 

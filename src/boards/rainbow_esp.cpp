@@ -1451,7 +1451,7 @@ void BrokeStudioFirmware::appendFile(I data_begin, I data_end)
 	uint32_t const offset_end = file_size + data_size;
 	this->working_file.file->data.resize(offset_end, 0);
 
-	for (vector<uint8_t>::size_type i = file_size; i < offset_end; ++i) {
+	for (std::vector<uint8_t>::size_type i = file_size; i < offset_end; ++i) {
 		this->working_file.file->data[i] = *data_begin;
 		++data_begin;
 	}
