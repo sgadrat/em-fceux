@@ -24,12 +24,6 @@ var KEY_CODE_TO_NAME = {8:"Backspace",9:"Tab",13:"Return",16:"Shift",17:"Ctrl",1
 var hack_first_input_time = null;
 var persistent_savegames = false;
 
-function list_dir(p) {
-	var elems = FS.readdir(p);
-	console.log(p);
-	elems.forEach(function(x) { console.log('  ' + x); });
-}
-
 var FCEM = {
 soundEnabled : true,
 showControls : (function(show) {
@@ -592,12 +586,10 @@ var loaderEl = document.getElementById('loader');
 var Module = {
   preRun: [function() {
     // Mount IndexedDB file system (IDBFS) to /fceux.
-	console.log('mkdir /fceux');
     FS.mkdir('/fceux');
     if (persistent_savegames) {
         FS.mount(IDBFS, {}, '/fceux');
     }
-	list_dir('/');
   }],
   postRun: [function() {
     FCEM.setController = Module.cwrap('FCEM_SetController', null, ['number', 'number']);
@@ -612,9 +604,7 @@ var Module = {
     // See Emscripten's updateCanvasDimensions() in library_browser.js for the faulty code.
     Browser.fullscreenHandlersInstalled = true;
     // Initial IDBFS sync.
-	console.log('syncfs');
     FS.syncfs(true, FCEM.onInitialSyncFromIDB); // reference to "persistent_savegames": note that we want to call the callback, even if IDBFS was not mounted
-	list_dir('/');
     // Setup configuration from localStorage.
     FCEM.initControllers();
     FCEM.initInputBindings();
@@ -687,8 +677,6 @@ req.addEventListener('load', function(event) {
 	s.src = url;
 	document.documentElement.appendChild(s);
 
-	console.log('Start game /data/games/Super Tilt Bro(E).nes');
-	//list_dir('/data');
 	FCEM.startGame('/data/games/Super Tilt Bro(E).nes');
 }, false);
 req.open("GET", "{{fceux.js}}", true);
