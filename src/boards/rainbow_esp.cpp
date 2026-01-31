@@ -1817,7 +1817,28 @@ void BrokeStudioFirmware::openConnection()
 		this->udp_socket = EM_ASM_INT({
 			return FCEM.createUdpSocket(UTF8ToString($0), $1);
 		}, this->server_settings_address.c_str(), this->server_settings_port);
-		UDBG("[Rainbow] got udp socket %d\n", this->udp_socket);
+
+		//HACK synchronously wait for the WebRTC connection to establish.
+		//     It freezes the emulation, but Super Tilt Bro.'s ping measurment screen expect that connections are immediately ready.
+		int ready = 0;
+		int timeout = 1000;
+		while (!ready && timeout > 0) {
+			ready = EM_ASM_INT({
+				if (FCEM.udpChannel === null)
+				{
+					return 0;
+				}
+				return 1;
+			});
+
+			if (!ready)
+			{
+				emscripten_sleep(20); //NOTE this call is the only cause of linking with "-sASYNCIFY" (remove the link flag if you remove this hack)
+				timeout -= 20;
+			}
+		}
+
+		UDBG("[Rainbow] got udp socket %d (in %d ms)\n", this->udp_socket, 1000 - timeout);
 	}
 }
 

@@ -78,6 +78,7 @@ if 'EMSCRIPTEN_TOOL_PATH' in os.environ:
   env.Append(LINKFLAGS = exports)
   env.Append(LINKFLAGS = '-sINCOMING_MODULE_JS_API=canvas,canvas2D,canvas3D,createContext,ctx,ctx2D,ctx3D,cwrap,dataFileDownloads,dynCall_v,expectedDataFileDownloads,HEAPU8,instantiateWasm,locateFile,locateFilePackage,noAudioDecoding,noImageDecoding,preloadResults,monitorRunDependencies,preRun,postRun,print,printErr,requestFullscreen,romName,romReload,setStatus,totalDependencies,useWebGL')
   env.Append(LINKFLAGS = '--preload-file src/drivers/em/assets/data/@/data/')
+  #env.Append(LINKGLAGS = '-s ASYNCIFY')
 else:
   env['EMSCRIPTEN'] = 0
 
@@ -240,11 +241,12 @@ if env['DEBUG']:
   if env['EMSCRIPTEN']:
     common = ''
     common += ' -s STRICT=1'
+    common += ' -s ASYNCIFY'
     common += ' -O0 -g'
     common += ' -s SAFE_HEAP=1'
     common += ' -s DEMANGLE_SUPPORT=1'
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = common, LINKFLAGS = common)
-    env.Append(LINKFLAGS = '-s ASSERTIONS=2 -s ALLOW_MEMORY_GROWTH')
+    env.Append(LINKFLAGS = '-s ASSERTIONS=2 -s ALLOW_MEMORY_GROWTH -s ASYNCIFY')
     env.Append(CCFLAGS = ['-Wno-unused-command-line-argument']) # SAFE_HEAP=1 causes this warning
   else:
     env.Append(CPPDEFINES=["_DEBUG"], CCFLAGS = ['-g', '-O0'])
@@ -260,7 +262,7 @@ if env['RELEASE']:
     #common += ' -s AGGRESSIVE_VARIABLE_ELIMINATION=1' # useless in wasm, removed since https://github.com/emscripten-core/emscripten/commit/27f2e127235d31c8ce65b134033d8dadc43eed4b
     env.Append(CCFLAGS = common)
     env.Append(LINKFLAGS = common)
-    env.Append(LINKFLAGS = '-s ASSERTIONS=0 -s ALLOW_MEMORY_GROWTH -strip-all')
+    env.Append(LINKFLAGS = '-s ASSERTIONS=0 -s ALLOW_MEMORY_GROWTH -s ASYNCIFY -strip-all')
     #env.Append(LINKFLAGS = '-s RETAIN_COMPILER_SETTINGS') # To be able to check values at runtime with emscripten_get_compiler_setting()
   else:
     env.Append(CCFLAGS = ['-O2'])
