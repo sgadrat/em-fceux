@@ -265,6 +265,7 @@ toggleSound : (function() {
 	udpOutputBuffer : null, // null: no possible buffering, array: each element will be sent on next occasion
 
 	createUdpSocket : function(address, port) {
+		FCEM.udpChannel = null;
 		FCEM.udpOutputBuffer = [];
 
 		wtu.get_channel(
@@ -284,7 +285,7 @@ toggleSound : (function() {
 			};
 
 			for (let i = 0; i < FCEM.udpOutputBuffer.length; ++i) {
-				console.log('send deleayed packet');
+				console.log('send delayed packet');
 				FCEM.udpChannel.send(FCEM.udpOutputBuffer[i]);
 			}
 			FCEM.udpOutputBuffer = null;
